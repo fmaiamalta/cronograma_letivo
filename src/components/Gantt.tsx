@@ -45,6 +45,38 @@ function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate }[]): 
   return out;
 }
 
+interface Etiqueta {
+  chave: string;
+  texto: string;
+  left: number;
+}
+
+/**
+ * Datas de início e fim de cada troço. Num troço curto vai uma só etiqueta
+ * ("12/02–15/02"). Se uma etiqueta tapar a anterior, desliza para a direita.
+ */
+function etiquetasTrocos(lista: [ISODate, ISODate][], x: (d: ISODate) => number, pxDia: number): Etiqueta[] {
+  const largura = (t: string) => t.length * 6.3 + 10; // estimativa para 0.66rem em negrito
+  const brutas: { chave: string; texto: string; left: number }[] = [];
+  for (const [a, b] of lista) {
+    const ini = x(a);
+    const fim = x(b) + pxDia;
+    if (a === b || fim - ini < 76) {
+      const texto = a === b ? fmtShort(a) : `${fmtShort(a)}–${fmtShort(b)}`;
+      brutas.push({ chave: a, texto, left: (ini + fim) / 2 - largura(texto) / 2 });
+    } else {
+      brutas.push({ chave: a, texto: fmtShort(a), left: ini });
+      brutas.push({ chave: a + 'f', texto: fmtShort(b), left: fim - largura(fmtShort(b)) });
+    }
+  }
+  let ultimoFim = -Infinity;
+  return brutas.map((e) => {
+    const left = Math.max(e.left, ultimoFim + 3);
+    ultimoFim = left + largura(e.texto);
+    return { ...e, left };
+  });
+}
+
 export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   const [LARGURA_ROTULO, setRotulo] = useState(larguraRotulo);
@@ -183,12 +215,9 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
                             </div>
                           );
                         })}
-                        {pm.inicio && (
-                          <span className="gantt-date" style={{ left: x(pm.inicio) }}>{fmtShort(pm.inicio)}</span>
-                        )}
-                        {pm.fim && pm.fim !== pm.inicio && (
-                          <span className="gantt-date end" style={{ left: x(pm.fim) + pxDia }}>{fmtShort(pm.fim)}</span>
-                        )}
+                        {etiquetasTrocos(trocos(pm, quebras), x, pxDia).map((e) => (
+                          <span key={e.chave} className="gantt-date" style={{ left: e.left }}>{e.texto}</span>
+                        ))}
                         {m.tarefas.filter((t) => t.data).map((t) => (
                           <button
                             key={t.id}

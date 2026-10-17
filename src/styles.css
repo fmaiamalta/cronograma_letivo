@@ -336,7 +336,7 @@ tr:last-child td { border-bottom: 0; }
 }
 .gantt-date.end { transform: translateX(-100%); }
 .gantt-break-date { top: auto; bottom: 5px; color: var(--break-text); }
-.gantt-break-date.mid { transform: translateX(-50%); }
+.gantt-date.mid { transform: translateX(-50%); }
 .gantt-task {
   position: absolute; bottom: 13px; width: 10px; height: 10px; padding: 0; z-index: 4; cursor: pointer;
   transform: translateX(-50%) rotate(45deg); border: 2px solid var(--cor); background: var(--surface);
