@@ -160,11 +160,13 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
       ...x,
       nome: e.nome,
       componente: e.componente,
-      // Uma UC escolhida como disciplina entra logo como módulo, se ainda não estiver.
-      modulos:
-        e.uc && !x.modulos.some((m) => m.codigo === e.uc!.codigo)
-          ? [...x.modulos, { id: uid(), codigo: e.uc.codigo, nome: e.uc.nome, quantidade: e.uc.horas, unidade: 'h', tarefas: [] }]
-          : x.modulos,
+      // As UC marcadas entram como módulos, pela ordem em que foram marcadas.
+      modulos: [
+        ...x.modulos,
+        ...(e.ucs ?? [])
+          .filter((uc) => !x.modulos.some((m) => m.codigo === uc.codigo))
+          .map((uc) => ({ id: uid(), codigo: uc.codigo, nome: uc.nome, quantidade: uc.horas, unidade: 'h' as const, tarefas: [] })),
+      ],
     }));
 
   const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter((c) => c.codigo.startsWith('UC')), procura, 8) : [];
