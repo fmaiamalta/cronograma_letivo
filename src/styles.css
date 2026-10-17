@@ -359,46 +359,43 @@ tr:last-child td { border-bottom: 0; }
   .gantt-label { position: static; }
 }
 
-/* Escolha da disciplina: componente e depois disciplina */
+/* Escolha da disciplina: componente e depois disciplina.
+   O Safari ignora flex/grid aplicados a <button>, por isso cada botão é um
+   bloco simples e o alinhamento fica num span interior. */
 .span-all { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
 .field-label { font-size: 0.85rem; color: var(--muted); }
-.picker-current {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px;
-  padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; text-align: left;
+.picker-current, .picker-head, .picker-body li button, .uc-row {
+  display: block; width: 100%; margin: 0; border: 0; background: none; cursor: pointer;
+  text-align: left; font: inherit; color: inherit; -webkit-appearance: none; appearance: none;
 }
-.picker-current span:first-child { display: flex; flex-direction: column; }
+.opt-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+.picker-current { min-height: 44px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.picker-current-txt { display: flex; flex-direction: column; text-align: left; }
 .picker-current small { color: var(--muted); }
 .picker { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); overflow: hidden; }
 .picker > .link-btn { padding: 8px 12px; }
 .picker-group + .picker-group { border-top: 1px solid var(--border); }
-.picker-head {
-  display: flex; justify-content: space-between; align-items: center; width: 100%;
-  padding: 11px 12px; border: 0; background: none; cursor: pointer; font-weight: 600; text-align: left;
-}
+.picker-head { padding: 11px 12px; font-weight: 600; }
 .picker-group.open .picker-head { background: var(--surface-2); }
-.picker-body { padding: 4px 6px 8px; max-height: 340px; overflow-y: auto; }
+.picker-body { padding: 4px 6px 8px; max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .picker-sub { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); padding: 8px 8px 2px; }
 .picker-body ul { list-style: none; margin: 0; padding: 0; }
-.picker-body li button {
-  display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: 6px;
-  background: none; cursor: pointer; text-align: left;
-}
+.picker-body li button { padding: 8px; border-radius: 6px; }
 .picker-body li button:hover, .picker-body li button.sel { background: var(--surface-2); }
 .picker-body li button.sel { color: var(--accent); font-weight: 600; }
 .picker-body li small { color: var(--muted); white-space: nowrap; }
 .picker-outra { display: flex; gap: 8px; padding: 8px; }
-.picker-tec { display: flex; flex-direction: column; gap: 6px; padding: 6px 4px; }
-.picker-tec ul { list-style: none; margin: 0; padding: 0; }
+.picker-tec { display: flex; flex-direction: column; gap: 8px; padding: 6px 4px; }
 .uc-list { list-style: none; margin: 0; padding: 0; }
-.uc-row {
-  display: grid; grid-template-columns: 22px 74px 1fr auto; gap: 8px; align-items: baseline; width: 100%;
-  padding: 8px 6px; border: 0; border-radius: 6px; background: none; cursor: pointer; text-align: left;
-}
+.uc-row { padding: 8px 6px; border-radius: 6px; }
 .uc-row:hover { background: var(--surface-2); }
 .uc-row.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.uc-ordem { font-weight: 700; color: var(--accent); text-align: center; }
-.uc-cod { color: var(--muted); }
-.uc-row.sel .uc-cod { color: var(--accent); font-weight: 600; }
-.uc-row small { color: var(--muted); white-space: nowrap; }
+.uc-line { display: flex; align-items: flex-start; gap: 8px; text-align: left; line-height: 1.35; }
+.uc-ordem { flex: 0 0 16px; font-weight: 700; color: var(--accent); }
+.uc-cod { flex: 0 0 64px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; line-height: 1.65; color: var(--muted); }
+.uc-row.sel .uc-cod { color: var(--accent); }
+.uc-nome { flex: 1 1 auto; min-width: 0; }
+.uc-nome .tag { margin-left: 6px; }
+.uc-horas { flex: 0 0 auto; font-size: 0.8rem; line-height: 1.65; color: var(--muted); white-space: nowrap; }
 .uc-vazio { padding: 8px; }
 .picker-tec-foot { position: sticky; bottom: -8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 4px; background: var(--surface); border-top: 1px solid var(--border); }

@@ -59,10 +59,16 @@ function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; c
           return (
             <li key={c.codigo}>
               <button type="button" className={'uc-row' + (ordem >= 0 ? ' sel' : '')} aria-pressed={ordem >= 0} onClick={() => alternar(c)}>
-                <span className="uc-ordem">{ordem >= 0 ? ordem + 1 : ''}</span>
-                <span className="uc-cod mono">{c.codigo}</span>
-                <span className="uc-nome">{c.nome}{c.opcional && <span className="tag">opcional</span>}</span>
-                <small>{c.horas} h</small>
+                {/* O Safari não aplica flex/grid ao próprio <button>: o alinhamento vive neste span. */}
+                <span className="uc-line">
+                  <span className="uc-ordem">{ordem >= 0 ? ordem + 1 : ''}</span>
+                  <span className="uc-cod">{c.codigo}</span>
+                  <span className="uc-nome">
+                    {c.nome}
+                    {c.opcional && <span className="tag">opcional</span>}
+                  </span>
+                  <span className="uc-horas">{c.horas} h</span>
+                </span>
               </button>
             </li>
           );
@@ -93,11 +99,13 @@ export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Pro
   if (!aberto) {
     return (
       <button type="button" className="picker-current" onClick={() => setAberto(true)}>
-        <span>
-          <strong>{nome || 'Escolher disciplina'}</strong>
-          {nome && <small>{compNome}</small>}
+        <span className="opt-line">
+          <span className="picker-current-txt">
+            <strong>{nome || 'Escolher disciplina'}</strong>
+            {nome && <small>{compNome}</small>}
+          </span>
+          <span className="chevron">▾</span>
         </span>
-        <span className="chevron">▾</span>
       </button>
     );
   }
@@ -109,8 +117,10 @@ export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Pro
         return (
           <div key={c.id} className={'picker-group' + (aberta ? ' open' : '')}>
             <button type="button" className="picker-head" aria-expanded={aberta} onClick={() => setGrupo(aberta ? null : c.id)}>
-              <span>{c.nome}</span>
-              <span className="chevron">{aberta ? '▴' : '▾'}</span>
+              <span className="opt-line">
+                <span>{c.nome}</span>
+                <span className="chevron">{aberta ? '▴' : '▾'}</span>
+              </span>
             </button>
             {aberta && c.id === 'tecnologica' && (
               <div className="picker-body">
@@ -123,8 +133,10 @@ export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Pro
                   {opcoes(c.id, catalogo).map((o) => (
                     <li key={o.nome}>
                       <button type="button" className={o.nome === nome ? 'sel' : ''} onClick={() => escolher({ nome: o.nome, componente: c.id })}>
-                        <span>{o.nome}</span>
-                        {o.detalhe && <small>{o.detalhe}</small>}
+                        <span className="opt-line">
+                          <span>{o.nome}</span>
+                          {o.detalhe && <small>{o.detalhe}</small>}
+                        </span>
                       </button>
                     </li>
                   ))}
