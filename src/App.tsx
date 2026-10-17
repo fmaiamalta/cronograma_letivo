@@ -91,7 +91,7 @@ export default function App() {
     try {
       const e = validarEstado(JSON.parse(await file.text()));
       if (!e) throw new Error('formato desconhecido');
-      if (confirm('Substituir todos os dados desta app pelos do ficheiro?')) setEstado(e);
+      if (confirm('Substituir todos os dados pelos do ficheiro?')) setEstado(e);
     } catch (err) {
       alert(`Ficheiro inválido: ${(err as Error).message}`);
     }
@@ -139,11 +139,11 @@ export default function App() {
         </details>
       </header>
 
-      {!gravado && <div className="banner warn-bg">Este browser não está a guardar dados (janela privada?). Exporta uma cópia antes de fechar.</div>}
+      {!gravado && <div className="banner warn-bg">Os dados não estão a ser guardados neste browser (janela privada?). Convém exportar uma cópia.</div>}
 
       {calRecebido && (
         <div className="banner">
-          <span>Recebeste o calendário escolar {calRecebido.anoLetivo}{calRecebido.escola ? ` da ${calRecebido.escola}` : ''}. Queres usá-lo?</span>
+          <span>Calendário escolar {calRecebido.anoLetivo}{calRecebido.escola ? ` (${calRecebido.escola})` : ''} recebido por link.</span>
           <div className="row">
             <button className="btn primary" onClick={aceitarCalendario}>Usar este calendário</button>
             <button className="btn" onClick={fecharBanner}>Ignorar</button>
@@ -157,7 +157,7 @@ export default function App() {
             <div className="page-head">
               <div>
                 <h1>Cronograma {estado.calendario.anoLetivo}</h1>
-                <p className="muted print-hide">Interrupções a cinzento, cada marca é um dia de aula. Toca num módulo para ver o progresso e as tarefas.</p>
+                <p className="muted print-hide">Interrupções a cinzento. Linha vermelha: hoje.</p>
               </div>
               {planos.length > 0 && (
                 <div className="row wrap print-hide">
@@ -174,13 +174,13 @@ export default function App() {
             </div>
             {!estado.calendario.importadoDe && planos.length > 0 && (
               <div className="banner print-hide" style={{ margin: '0 0 12px' }}>
-                <span>Estás a usar o calendário nacional. Importa o calendário da tua escola para teres os feriados e as datas certas.</span>
+                <span>Calendário nacional em uso. Falta importar o calendário da escola.</span>
                 <button className="btn" onClick={() => setSep('calendario')}>Importar calendário</button>
               </div>
             )}
             {planos.length === 0 ? (
               <div className="empty">
-                <p>Ainda não há nada para mostrar. Começa pelo teu horário: turmas, tempos por dia e UC.</p>
+                <p>Sem disciplinas no horário.</p>
                 <div className="row">
                   <button className="btn primary" onClick={() => setSep('horario')}>Preencher o horário</button>
                   <button className="btn" onClick={carregarExemplo}>Ver um exemplo</button>
@@ -198,7 +198,7 @@ export default function App() {
             )}
             <p className="legend">
               {estado.calendario.interrupcoes.map((i) => `${i.nome} ${i.inicio.slice(8, 10)}/${i.inicio.slice(5, 7)}–${i.fim.slice(8, 10)}/${i.fim.slice(5, 7)}`).join(' | ')}
-              . Os feriados aparecem como linhas finas e os dias de interrupção não contam como aulas.
+              . Linhas finas: feriados.
             </p>
           </div>
         )}

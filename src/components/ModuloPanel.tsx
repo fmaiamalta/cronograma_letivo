@@ -60,7 +60,7 @@ export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar }: Pr
         </div>
 
         <h3>Tarefas</h3>
-        {tarefas.length === 0 && <p className="muted">Ainda não há tarefas. Ex.: "Entregar trabalho 1", "Teste", "Apresentação oral".</p>}
+        {tarefas.length === 0 && <p className="muted">Sem tarefas.</p>}
         <ul className="task-list">
           {tarefas.map((t) => (
             <li key={t.id} className={t.feita ? 'done' : t.data && t.data < hoje ? 'late' : ''}>

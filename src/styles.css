@@ -156,6 +156,7 @@ input[type='checkbox'], input[type='radio'] { width: 18px; height: 18px; accent-
 select { width: auto; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
 label > input, label > select { color: var(--text); font-size: 0.95rem; }
+label > select { width: 100%; }
 label.btn { flex-direction: row; font-size: 1rem; color: var(--text); }
 label.btn.primary { color: var(--accent-text); }
 .btn > input[type='file'] { display: none; }
@@ -324,16 +325,18 @@ tr:last-child td { border-bottom: 0; }
   background: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--cor) 22%, transparent) 5px 7px);
 }
 .gantt-turma-block span { position: absolute; top: 2px; left: 4px; font-size: 0.65rem; font-weight: 600; color: var(--cor); }
-.gantt-seg { position: absolute; top: 31px; height: 2px; background: var(--cor); opacity: 0.35; z-index: 2; }
-.gantt-tick { position: absolute; bottom: 12px; border-radius: 1px; background: var(--cor); z-index: 2; opacity: 0.6; }
-.gantt-tick.past { opacity: 1; }
+.gantt-bar {
+  position: absolute; bottom: 12px; height: 12px; z-index: 2; border-radius: 3px; overflow: hidden;
+  background: color-mix(in srgb, var(--cor) 40%, transparent);
+}
+.gantt-bar-done { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cor); }
 .gantt-date {
   position: absolute; top: 3px; z-index: 3; font-size: 0.66rem; font-weight: 700; line-height: 1;
   padding: 2px 4px; border-radius: 4px; background: var(--surface); box-shadow: 0 0 0 1px var(--grid); white-space: nowrap;
 }
 .gantt-date.end { transform: translateX(-100%); }
 .gantt-task {
-  position: absolute; bottom: 2px; width: 10px; height: 10px; padding: 0; z-index: 4; cursor: pointer;
+  position: absolute; bottom: 13px; width: 10px; height: 10px; padding: 0; z-index: 4; cursor: pointer;
   transform: translateX(-50%) rotate(45deg); border: 2px solid var(--cor); background: var(--surface);
 }
 .gantt-task.done { background: var(--ok); border-color: var(--ok); }
@@ -352,5 +355,4 @@ tr:last-child td { border-bottom: 0; }
   body, .gantt, .gantt-label, .gantt-head { background: #fff !important; color: #000; }
   .gantt { max-height: none; overflow: visible; border: 0; }
   .gantt-label { position: static; }
-  .gantt-tick { opacity: 1; }
 }

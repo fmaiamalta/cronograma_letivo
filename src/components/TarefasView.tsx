@@ -39,11 +39,11 @@ export function TarefasView({ estado, hoje, onAlternar, onAbrir }: Props) {
       <div className="page-head">
         <div>
           <h1>Tarefas</h1>
-          <p className="muted">{pend.length} por fazer · {feitas} feitas. Cria tarefas a partir de cada módulo no cronograma.</p>
+          <p className="muted">{pend.length} por fazer · {feitas} feitas</p>
         </div>
         <label className="toggle"><input type="checkbox" checked={verFeitas} onChange={(e) => setVerFeitas(e.target.checked)} /> Mostrar feitas</label>
       </div>
-      {todas.length === 0 && <div className="empty"><p>Ainda não tens tarefas. Toca num módulo do cronograma para criar a primeira.</p></div>}
+      {todas.length === 0 && <div className="empty"><p>Sem tarefas. As tarefas criam-se em cada módulo do cronograma.</p></div>}
       {grupos.filter(([, l]) => l.length).map(([titulo, l]) => (
         <section key={titulo} className="card plain">
           <h2 className={titulo === 'Atrasadas' ? 'warn' : ''}>{titulo}</h2>

@@ -4,6 +4,7 @@ import { normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/cata
 import { temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { COMPONENTES, type Ano, type Disciplina, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { DISCIPLINAS, type DisciplinaBase } from '../data/disciplinas';
 import { IconDown, IconTrash, IconUp } from './icons';
 
 interface Props {
@@ -57,26 +58,23 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>O meu horário</h1>
-          <p className="muted">Uma entrada por cada disciplina que dás a uma turma. Indica quantos tempos de {estado.calendario.minutosPorTempo} min tens em cada dia e a lista de UC ou módulos, por ordem.</p>
+          <h1>Horário</h1>
+          <p className="muted">Uma entrada por disciplina e turma.</p>
         </div>
         <button className="btn primary" onClick={novaDisciplina}>+ Disciplina</button>
       </div>
 
       {estado.disciplinas.length === 0 && (
         <div className="empty">
-          <p>Ainda não tens disciplinas.</p>
+          <p>Sem disciplinas.</p>
           <div className="row">
-            <button className="btn primary" onClick={novaDisciplina}>Criar a primeira</button>
+            <button className="btn primary" onClick={novaDisciplina}>Nova disciplina</button>
             <button className="btn" onClick={onExemplo}>Carregar um exemplo</button>
           </div>
         </div>
       )}
 
       <datalist id="turmas">{turmas.map((t) => <option key={t} value={t} />)}</datalist>
-      <datalist id="disciplinas-catalogo">
-        {estado.catalogo.filter((c) => !c.codigo.startsWith('UC')).map((c) => <option key={c.codigo} value={c.nome} />)}
-      </datalist>
 
       {estado.disciplinas.map((d, idx) => {
         const plano = planos.find((p) => p.disciplina.id === d.id);
@@ -157,9 +155,25 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
     );
   };
 
-  const escolherDisciplina = (nome: string) => {
-    const e = estado.catalogo.find((c) => c.nome === nome && !c.codigo.startsWith('UC'));
-    mudar((x) => ({ ...x, nome, componente: e?.componente ?? x.componente }));
+  // Lista fixa mais as disciplinas que vierem de referenciais importados.
+  const disciplinas: DisciplinaBase[] = [
+    ...DISCIPLINAS,
+    ...estado.catalogo
+      .filter((c) => !c.codigo.startsWith('UC') && !DISCIPLINAS.some((x) => x.nome === c.nome))
+      .map((c) => ({ nome: c.nome, componente: c.componente })),
+  ];
+  const conhecida = disciplinas.find((x) => x.nome === d.nome);
+  const [outra, setOutra] = useState(!!d.nome && !conhecida);
+
+  const escolherDisciplina = (valor: string) => {
+    if (valor === '__outra') {
+      setOutra(true);
+      mudar((x) => ({ ...x, nome: '' }));
+      return;
+    }
+    setOutra(false);
+    const e = disciplinas.find((x) => x.nome === valor);
+    mudar((x) => ({ ...x, nome: valor, componente: e?.componente ?? x.componente }));
   };
 
   const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter((c) => c.codigo.startsWith('UC')), procura, 8) : [];
@@ -167,13 +181,31 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
   return (
     <div className="card-body">
       <div className="grid-form">
-        <label>Turma<input list="turmas" value={d.turma} placeholder="10.º M" onChange={(e) => set('turma', e.target.value)} /></label>
-        <label>Disciplina<input list="disciplinas-catalogo" value={d.nome} placeholder="Ex.: Sistemas de Informação" onChange={(e) => escolherDisciplina(e.target.value)} /></label>
         <label>Ano
           <select value={d.ano} onChange={(e) => set('ano', Number(e.target.value) as Ano)}>
             <option value={10}>10.º</option><option value={11}>11.º</option><option value={12}>12.º</option>
           </select>
         </label>
+        <label>Turma<input list="turmas" value={d.turma} placeholder="10.º M" onChange={(e) => set('turma', e.target.value)} /></label>
+        <label className="span2">Disciplina
+          <select value={outra ? '__outra' : conhecida ? d.nome : ''} onChange={(e) => escolherDisciplina(e.target.value)}>
+            <option value="" disabled>Escolher</option>
+            {COMPONENTES.map((c) => {
+              const lista = disciplinas.filter((x) => x.componente === c.id);
+              return lista.length ? (
+                <optgroup key={c.id} label={c.nome}>
+                  {lista.map((x) => <option key={x.nome} value={x.nome}>{x.nome}</option>)}
+                </optgroup>
+              ) : null;
+            })}
+            <option value="__outra">Outra</option>
+          </select>
+        </label>
+        {outra && (
+          <label className="span2">Nome da disciplina
+            <input value={d.nome} autoFocus onChange={(e) => set('nome', e.target.value)} />
+          </label>
+        )}
         <label>Componente
           <select value={d.componente} onChange={(e) => set('componente', e.target.value as Disciplina['componente'])}>
             {COMPONENTES.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -209,7 +241,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
 
       <fieldset>
         <legend>Dias sem aula desta disciplina</legend>
-        <p className="muted small">Visitas de estudo, reuniões, provas. Os módulos seguintes empurram automaticamente.</p>
+        <p className="muted small">Visitas de estudo, reuniões, provas, greves, ...</p>
         <div className="chips">
           {d.diasSemAula.map((x) => (
             <span key={x} className="chip">
@@ -285,8 +317,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
         </div>
         {plano && (
           <p className={'small ' + (plano.temposNecessarios > plano.temposDisponiveis ? 'warn' : 'muted')}>
-            Precisas de {plano.temposNecessarios} tempos. Até {fmtLong(plano.fim)} tens {plano.temposDisponiveis} tempos de aula
-            ({plano.dias.length} dias).
+            Necessários: {plano.temposNecessarios} tempos. Disponíveis até {fmtLong(plano.fim)}: {plano.temposDisponiveis} tempos ({plano.dias.length} dias).
           </p>
         )}
       </fieldset>
@@ -309,7 +340,7 @@ function PeriodosTurma({ estado, turmas, atualizar }: { estado: Estado; turmas: 
   return (
     <section className="card plain">
       <h2>Períodos sem aulas por turma</h2>
-      <p className="muted small">Formação em Contexto de Trabalho, intercâmbios, semanas de projeto. Aplica-se a todas as disciplinas da turma.</p>
+      <p className="muted small">FCT, intercâmbios, semanas de projeto. Aplica-se a toda a turma.</p>
       {estado.periodosTurma.map((p) => (
         <div key={p.id} className="period-row">
           <input list="turmas" value={p.turma} onChange={(e) => mudar(p.id, (x) => ({ ...x, turma: e.target.value }))} aria-label="Turma" placeholder="Turma" />

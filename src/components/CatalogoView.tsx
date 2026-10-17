@@ -26,10 +26,10 @@ export function CatalogoView({ estado, atualizar }: Props) {
       const nome = file.name.toLowerCase();
       let r = nome.endsWith('.csv') ? lerCatalogoCSV(texto) : lerReferencial(texto);
       if (!r.length) r = lerCatalogoCSV(texto);
-      if (!r.length) alert('Não encontrei UC neste ficheiro. Usa o referencial da qualificação (PDF ou DOCX) ou um CSV "código;nome;horas".');
+      if (!r.length) alert('Sem UC reconhecidas neste ficheiro. Formatos aceites: referencial (PDF ou DOCX) ou CSV "código;nome;horas".');
       else setNovas(r);
     } catch (err) {
-      alert(`Não consegui ler o ficheiro: ${(err as Error).message}`);
+      alert(`Não foi possível ler o ficheiro: ${(err as Error).message}`);
     } finally {
       setALer(null);
     }
@@ -51,10 +51,7 @@ export function CatalogoView({ estado, atualizar }: Props) {
       <div className="page-head">
         <div>
           <h1>Catálogo de UC</h1>
-          <p className="muted">
-            {estado.catalogo.length} entradas. Vem com o referencial de Técnico/a de Multimédia. Para outro curso, importa o referencial
-            desse curso (Word ou PDF).
-          </p>
+          <p className="muted">{estado.catalogo.length} entradas. Inclui o referencial de Técnico/a de Multimédia.</p>
         </div>
         <label className="btn primary">
           {aLer ?? 'Importar referencial'}
@@ -67,8 +64,7 @@ export function CatalogoView({ estado, atualizar }: Props) {
         <section className="card plain highlight">
           <h2>Encontrei {novas.length} entradas</h2>
           <p className="muted small">
-            {novas.filter((n) => n.codigo.startsWith('UC')).length} UC e {novas.filter((n) => !n.codigo.startsWith('UC')).length} disciplinas.
-            As horas das UC vêm dos pontos de crédito (2,25 pontos = 25 h).
+            {novas.filter((n) => n.codigo.startsWith('UC')).length} UC e {novas.filter((n) => !n.codigo.startsWith('UC')).length} disciplinas. 2,25 pontos de crédito = 25 h.
           </p>
           <div className="table-wrap small-table">
             <table>
@@ -125,7 +121,7 @@ export function CatalogoView({ estado, atualizar }: Props) {
       </div>
 
       <div className="row end">
-        <button className="btn" onClick={() => confirm('Repor o catálogo original? As entradas importadas desaparecem.') && atualizar((s) => ({ ...s, catalogo: CATALOGO_BASE }))}>
+        <button className="btn" onClick={() => confirm('Repor o catálogo original? As entradas importadas são removidas.') && atualizar((s) => ({ ...s, catalogo: CATALOGO_BASE }))}>
           Repor catálogo original
         </button>
       </div>

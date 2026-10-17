@@ -69,7 +69,7 @@ export function exemplo(): Pick<Estado, 'disciplinas' | 'periodosTurma'> {
       ],
     },
     {
-      id: uid(), turma: '10.º D', nome: 'TIC', ano: 10, componente: 'sociocultural', cor: CORES[2],
+      id: uid(), turma: '10.º D', nome: 'Tecnologias da Informação e Comunicação', ano: 10, componente: 'sociocultural', cor: CORES[2],
       tempos: semana(0, 2, 0, 2, 0), diasSemAula: [],
       modulos: [mod('Base 1 · Pesquisar, filtrar e estruturar', 50, 't'), mod('Base 2 · Organização e tratamento de dados', 50, 't')],
     },

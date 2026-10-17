@@ -41,10 +41,10 @@ export function CalendarioView({ estado, atualizar }: Props) {
         ...s.interrupcoes.map((i) => `i:${i.inicio}`),
         ...s.feriados.map((f) => `f:${f.data}`),
       ];
-      if (!chaves.length && !s.inicio) alert('Não encontrei datas neste ficheiro. Podes introduzi-las à mão.');
+      if (!chaves.length && !s.inicio) alert('Sem datas reconhecidas neste ficheiro.');
       else setSugestao({ ...s, escolhidas: new Set(chaves), ficheiro: file.name, inicioEscolhido: s.inicio, substituir: true });
     } catch (err) {
-      alert(`Não consegui ler o ficheiro: ${(err as Error).message}`);
+      alert(`Não foi possível ler o ficheiro: ${(err as Error).message}`);
     } finally {
       setALer(null);
     }
@@ -94,7 +94,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
         setTimeout(() => setCopiado(false), 2500);
       }
     } catch {
-      prompt('Copia este link:', url);
+      prompt('Link de partilha:', url);
     }
   };
 
@@ -103,10 +103,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
       <div className="page-head">
         <div>
           <h1>Calendário escolar</h1>
-          <p className="muted">
-            Cada escola tem o seu. Importa o PDF do calendário da tua escola e confirma as datas. Depois partilha o link com os colegas, que
-            ficam com o mesmo calendário sem o preencher.
-          </p>
+          <p className="muted">Interrupções, feriados, início e fim das aulas da escola.</p>
         </div>
         <div className="row wrap">
           <label className="btn">
@@ -120,8 +117,8 @@ export function CalendarioView({ estado, atualizar }: Props) {
 
       {!cal.importadoDe && !sugestao && (
         <section className="card plain highlight">
-          <strong>Estás a ver o calendário nacional 2026/2027.</strong>
-          <p className="muted small">Importa o calendário da tua escola (PDF, Word ou fotografia) para teres o início, o fim e os feriados certos.</p>
+          <strong>Calendário nacional 2026/2027.</strong>
+          <p className="muted small">Falta importar o calendário da escola (PDF, Word ou imagem).</p>
         </section>
       )}
       {cal.importadoDe && !sugestao && <p className="muted small">Importado de: {cal.importadoDe}</p>}
@@ -129,11 +126,11 @@ export function CalendarioView({ estado, atualizar }: Props) {
       {sugestao && (
         <section className="card plain highlight">
           <h2>Datas encontradas no ficheiro</h2>
-          <p className="muted small">Confirma o que está certo. Só as datas marcadas são gravadas.</p>
+          <p className="muted small">Só as datas marcadas são gravadas.</p>
           {(sugestao.inicios.length > 1 || sugestao.inicio) && (
             <fieldset>
               <legend>Início das aulas</legend>
-              {sugestao.inicios.length > 1 && <p className="muted small">O ficheiro tem mais do que um início. Escolhe o dos cursos profissionais.</p>}
+              {sugestao.inicios.length > 1 && <p className="muted small">Mais do que um início no ficheiro.</p>}
               <ul className="check-list">
                 {(sugestao.inicios.length ? sugestao.inicios : [{ data: sugestao.inicio!, nota: '' }]).map((x) => (
                   <li key={x.data}>
@@ -205,7 +202,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
 
       <section className="card plain">
         <h2>Feriados e dias sem atividade letiva</h2>
-        <p className="muted small">Junta aqui o feriado municipal e os dias que a escola fechar.</p>
+        <p className="muted small">Inclui o feriado municipal.</p>
         {cal.feriados.map((f) => (
           <div key={f.id} className="period-row">
             <input value={f.nome} onChange={(e) => mudarFeriado(f.id, (x) => ({ ...x, nome: e.target.value }))} aria-label="Nome" />
@@ -219,7 +216,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
 
       <div className="row end">
         <button className="btn" onClick={() => {
-          if (confirm('Repor o calendário nacional 2026/2027? Perdes as alterações feitas aqui.')) {
+          if (confirm('Repor o calendário nacional 2026/2027? As alterações perdem-se.')) {
             atualizar((e) => ({ ...e, calendario: { ...calendario2026(), escola: e.calendario.escola } }));
           }
         }}>

@@ -154,17 +154,19 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
                             <span>{pt.nome}</span>
                           </div>
                         ))}
-                        {trocos(pm, quebras).map(([a, b]) => (
-                          <div key={a} className="gantt-seg" style={{ left: x(a) + pxDia / 2, width: Math.max(1, x(b) - x(a)) }} />
-                        ))}
-                        {pm.sessoes.map((s) => (
-                          <div
-                            key={s.data}
-                            className={'gantt-tick' + (s.data <= hoje ? ' past' : '')}
-                            title={`${fmtLong(s.data)}: ${s.tempos} ${s.tempos === 1 ? 'tempo' : 'tempos'}`}
-                            style={{ left: x(s.data), width: Math.max(2, pxDia * 0.7), height: 6 + Math.min(s.tempos, 4) * 3 }}
-                          />
-                        ))}
+                        {trocos(pm, quebras).map(([a, b]) => {
+                          // Barra contínua de a até ao fim do dia b; a parte já dada fica mais forte.
+                          const ini = x(a);
+                          const fimX = x(b) + pxDia;
+                          const corte = Math.min(Math.max(x(hoje) + pxDia, ini), fimX);
+                          const aulas = pm.sessoes.filter((s) => s.data >= a && s.data <= b).length;
+                          const titulo = `${fmtLong(a)} a ${fmtLong(b)} · ${aulas} ${aulas === 1 ? 'aula' : 'aulas'}`;
+                          return (
+                            <div key={a} className="gantt-bar" style={{ left: ini, width: fimX - ini }} title={titulo}>
+                              {corte > ini && <span className="gantt-bar-done" style={{ width: corte - ini }} />}
+                            </div>
+                          );
+                        })}
                         {pm.inicio && (
                           <span className="gantt-date" style={{ left: x(pm.inicio) }}>{fmtShort(pm.inicio)}</span>
                         )}
