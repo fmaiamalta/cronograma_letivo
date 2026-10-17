@@ -283,7 +283,7 @@ tr:last-child td { border-bottom: 0; }
   -webkit-overflow-scrolling: touch;
 }
 .gantt-inner { position: relative; }
-.gantt-head { position: sticky; top: 0; z-index: 6; display: flex; height: 46px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.gantt-head { position: sticky; top: 0; z-index: 6; display: flex; height: 66px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .gantt-label {
   position: sticky; left: 0; z-index: 4; width: var(--rotulo); flex: none;
   background: var(--surface); padding: 6px 10px; border-right: 1px solid var(--border);
@@ -291,9 +291,9 @@ tr:last-child td { border-bottom: 0; }
 }
 .gantt-corner { z-index: 7; font-weight: 700; font-size: 0.85rem; }
 .gantt-track { position: relative; flex: none; }
-.gantt-month { position: absolute; top: 0; height: 46px; display: flex; justify-content: center; padding-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; border-left: 1px solid var(--grid); }
+.gantt-month { position: absolute; top: 0; height: 66px; display: flex; justify-content: center; padding-top: 6px; font-size: 0.75rem; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; border-left: 1px solid var(--grid); }
 .gantt-today-pill {
-  position: absolute; bottom: 2px; transform: translateX(-50%); z-index: 2;
+  position: absolute; top: 24px; transform: translateX(-50%); z-index: 2;
   font-size: 0.68rem; font-weight: 700; color: #fff; background: var(--today); padding: 0 6px; border-radius: 999px; white-space: nowrap;
 }
 .gantt-body { position: relative; }
@@ -335,6 +335,8 @@ tr:last-child td { border-bottom: 0; }
   padding: 2px 4px; border-radius: 4px; background: var(--surface); box-shadow: 0 0 0 1px var(--grid); white-space: nowrap;
 }
 .gantt-date.end { transform: translateX(-100%); }
+.gantt-break-date { top: auto; bottom: 5px; color: var(--break-text); }
+.gantt-break-date.mid { transform: translateX(-50%); }
 .gantt-task {
   position: absolute; bottom: 13px; width: 10px; height: 10px; padding: 0; z-index: 4; cursor: pointer;
   transform: translateX(-50%) rotate(45deg); border: 2px solid var(--cor); background: var(--surface);

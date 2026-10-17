@@ -94,6 +94,22 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
                 {m.nome}
               </div>
             ))}
+            {calendario.interrupcoes.map((i) => {
+              const ini = x(i.inicio);
+              const larg = (diffDays(i.inicio, i.fim) + 1) * pxDia;
+              const titulo = `${i.nome}: ${fmtLong(i.inicio)} a ${fmtLong(i.fim)}`;
+              // Faixa estreita: uma só etiqueta ao centro; larga: uma em cada ponta.
+              return larg >= 90 ? (
+                <span key={i.id} title={titulo}>
+                  <span className="gantt-date gantt-break-date" style={{ left: ini }}>{fmtShort(i.inicio)}</span>
+                  <span className="gantt-date gantt-break-date end" style={{ left: ini + larg }}>{fmtShort(i.fim)}</span>
+                </span>
+              ) : (
+                <span key={i.id} className="gantt-date gantt-break-date mid" style={{ left: ini + larg / 2 }} title={titulo}>
+                  {fmtShort(i.inicio)}–{fmtShort(i.fim)}
+                </span>
+              );
+            })}
             {hojeVisivel && (
               <div className="gantt-today-pill" style={{ left: x(hoje) + pxDia / 2 }}>
                 Hoje {fmtShort(hoje)}
