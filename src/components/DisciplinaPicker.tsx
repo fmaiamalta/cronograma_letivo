@@ -30,42 +30,47 @@ function opcoes(componente: Componente, catalogo: EntradaCatalogo[]): Opcao[] {
   ];
 }
 
-/** Componente tecnológica: nome da disciplina escrito à mão e UC marcadas do referencial. */
+function semAcentos(t: string): string {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/** Componente tecnológica: nome da disciplina escrito à mão e UC tocadas na lista, por ordem. */
 function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; catalogo: EntradaCatalogo[]; onEscolher: (e: Escolha) => void }) {
   const [nome, setNome] = useState(nomeAtual);
+  const [procura, setProcura] = useState('');
   const [marcadas, setMarcadas] = useState<EntradaCatalogo[]>([]);
-  const ucs = catalogo.filter((c) => c.codigo.startsWith('UC') && c.componente === 'tecnologica');
+  const ucs = catalogo
+    .filter((c) => c.codigo.startsWith('UC') && c.componente === 'tecnologica')
+    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+  const termo = semAcentos(procura.trim());
+  const visiveis = termo
+    ? ucs.filter((c) => semAcentos(c.codigo).includes(termo.replace(/^uc/, '')) || semAcentos(c.nome).includes(termo))
+    : ucs;
   const alternar = (c: EntradaCatalogo) =>
     setMarcadas((m) => (m.some((x) => x.codigo === c.codigo) ? m.filter((x) => x.codigo !== c.codigo) : [...m, c]));
-  const grupos = [
-    { titulo: 'UC obrigatórias', lista: ucs.filter((c) => !c.opcional) },
-    { titulo: 'UC opcionais', lista: ucs.filter((c) => c.opcional) },
-  ].filter((g) => g.lista.length);
 
   return (
     <form className="picker-tec" onSubmit={(e) => { e.preventDefault(); if (nome.trim()) onEscolher({ nome: nome.trim(), componente: 'tecnologica', ucs: marcadas }); }}>
       <label>Nome da disciplina<input value={nome} placeholder="PPM" onChange={(e) => setNome(e.target.value)} /></label>
-      {grupos.map((g) => (
-        <div key={g.titulo}>
-          <div className="picker-sub">{g.titulo}</div>
-          <ul>
-            {g.lista.map((c) => {
-              const ordem = marcadas.findIndex((x) => x.codigo === c.codigo);
-              return (
-                <li key={c.codigo}>
-                  <label className="picker-uc">
-                    <input type="checkbox" checked={ordem >= 0} onChange={() => alternar(c)} />
-                    <span>{c.nome}</span>
-                    <small>{ordem >= 0 ? `${ordem + 1}.º · ` : ''}{c.codigo.replace(/^UC0*/, '')} · {c.horas} h</small>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+      <input type="search" placeholder="Procurar UC (código ou nome)" value={procura} onChange={(e) => setProcura(e.target.value)} aria-label="Procurar UC" />
+      <ul className="uc-list">
+        {visiveis.map((c) => {
+          const ordem = marcadas.findIndex((x) => x.codigo === c.codigo);
+          return (
+            <li key={c.codigo}>
+              <button type="button" className={'uc-row' + (ordem >= 0 ? ' sel' : '')} aria-pressed={ordem >= 0} onClick={() => alternar(c)}>
+                <span className="uc-ordem">{ordem >= 0 ? ordem + 1 : ''}</span>
+                <span className="uc-cod mono">{c.codigo}</span>
+                <span className="uc-nome">{c.nome}{c.opcional && <span className="tag">opcional</span>}</span>
+                <small>{c.horas} h</small>
+              </button>
+            </li>
+          );
+        })}
+        {!visiveis.length && <li className="muted small uc-vazio">Sem resultados.</li>}
+      </ul>
       <div className="picker-tec-foot">
-        <span className="muted small">{marcadas.length} UC marcadas</span>
+        <span className="muted small">{marcadas.length ? marcadas.map((m) => m.codigo).join(', ') : 'Nenhuma UC escolhida'}</span>
         <button className="btn primary" type="submit" disabled={!nome.trim()}>OK</button>
       </div>
     </form>
