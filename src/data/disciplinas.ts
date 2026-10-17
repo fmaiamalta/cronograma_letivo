@@ -6,39 +6,14 @@ export interface DisciplinaBase {
 }
 
 /**
- * Disciplinas dos cursos profissionais, por componente de formação. Ao escolher
- * uma, a componente fica preenchida.
+ * Disciplinas que não vêm como disciplina no referencial: na componente
+ * tecnológica o referencial só tem UC, mas as escolas agrupam-nas nestas
+ * disciplinas. As restantes (Português, Matemática, ...) vêm do catálogo.
  */
-export const DISCIPLINAS: DisciplinaBase[] = [
-  // Sociocultural
-  { nome: 'Português', componente: 'sociocultural' },
-  { nome: 'Inglês', componente: 'sociocultural' },
-  { nome: 'Francês', componente: 'sociocultural' },
-  { nome: 'Espanhol', componente: 'sociocultural' },
-  { nome: 'Alemão', componente: 'sociocultural' },
-  { nome: 'Área de Integração', componente: 'sociocultural' },
-  { nome: 'Educação Física', componente: 'sociocultural' },
-  { nome: 'Tecnologias da Informação e Comunicação', componente: 'sociocultural' },
-  { nome: 'Cidadania e Desenvolvimento', componente: 'sociocultural' },
-  { nome: 'Educação Moral e Religiosa', componente: 'sociocultural' },
-  { nome: 'Oferta de Escola', componente: 'sociocultural' },
-  // Científica
-  { nome: 'Matemática', componente: 'cientifica' },
-  { nome: 'Física e Química', componente: 'cientifica' },
-  { nome: 'Física', componente: 'cientifica' },
-  { nome: 'Química', componente: 'cientifica' },
-  { nome: 'Biologia', componente: 'cientifica' },
-  { nome: 'Geologia', componente: 'cientifica' },
-  { nome: 'História da Cultura e das Artes', componente: 'cientifica' },
-  { nome: 'Economia', componente: 'cientifica' },
-  { nome: 'Geografia', componente: 'cientifica' },
-  { nome: 'Psicologia', componente: 'cientifica' },
-  { nome: 'Sociologia', componente: 'cientifica' },
-  // Tecnológica
+export const DISCIPLINAS_ESCOLA: DisciplinaBase[] = [
   { nome: 'Design, Comunicação e Audiovisuais', componente: 'tecnologica' },
   { nome: 'Projeto e Produção Multimédia', componente: 'tecnologica' },
   { nome: 'Sistemas de Informação', componente: 'tecnologica' },
   { nome: 'Técnicas de Multimédia', componente: 'tecnologica' },
-  // Contexto de trabalho
   { nome: 'Formação em Contexto de Trabalho', componente: 'fct' },
 ];

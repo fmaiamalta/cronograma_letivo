@@ -468,8 +468,148 @@
   "qualificacao": "Técnico/a de Multimédia"
  },
  {
+  "codigo": "DACP00A1S00",
+  "nome": "Português Língua Não Materna (A1)",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP00A2S00",
+  "nome": "Português Língua Não Materna (A2)",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP00B1S00",
+  "nome": "Português Língua Não Materna (B1)",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0PL1S00",
+  "nome": "Língua Gestual Portuguesa (PL1)",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0PL2S00",
+  "nome": "Português Língua Segunda (PL2) para alunos surdos",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
   "codigo": "DACP0LE001S00",
   "nome": "Inglês (LE I, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE002S00",
+  "nome": "Inglês (LE II, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE003S00",
+  "nome": "Inglês (LE III, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE004S00",
+  "nome": "Francês (LE I, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE005S00",
+  "nome": "Francês (LE II, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE006S00",
+  "nome": "Francês (LE III, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE007S00",
+  "nome": "Alemão (LE I, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE008S00",
+  "nome": "Alemão (LE II, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE009S00",
+  "nome": "Alemão (LE III, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE010S00",
+  "nome": "Espanhol (LE I, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE011S00",
+  "nome": "Espanhol (LE II, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE012S00",
+  "nome": "Espanhol (LE III, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE013S00",
+  "nome": "Inglês (LE II, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE014S00",
+  "nome": "Francês (LE II, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE015S00",
+  "nome": "Alemão (LE II, iniciação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE016S00",
+  "nome": "Espanhol (LE II, iniciação)",
   "horas": 220,
   "componente": "sociocultural",
   "qualificacao": "Técnico/a de Multimédia"
@@ -499,6 +639,13 @@
   "codigo": "DACP0038000",
   "nome": "Oferta de Escola",
   "horas": 100,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0081000",
+  "nome": "Cidadania e Desenvolvimento",
+  "horas": 0,
   "componente": "sociocultural",
   "qualificacao": "Técnico/a de Multimédia"
  },

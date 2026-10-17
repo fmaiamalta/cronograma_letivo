@@ -3,8 +3,8 @@ import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
 import { temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
-import { COMPONENTES, type Ano, type Disciplina, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
-import { DISCIPLINAS, type DisciplinaBase } from '../data/disciplinas';
+import { type Ano, type Disciplina, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
 interface Props {
@@ -155,26 +155,17 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
     );
   };
 
-  // Lista fixa mais as disciplinas que vierem de referenciais importados.
-  const disciplinas: DisciplinaBase[] = [
-    ...DISCIPLINAS,
-    ...estado.catalogo
-      .filter((c) => !c.codigo.startsWith('UC') && !DISCIPLINAS.some((x) => x.nome === c.nome))
-      .map((c) => ({ nome: c.nome, componente: c.componente })),
-  ];
-  const conhecida = disciplinas.find((x) => x.nome === d.nome);
-  const [outra, setOutra] = useState(!!d.nome && !conhecida);
-
-  const escolherDisciplina = (valor: string) => {
-    if (valor === '__outra') {
-      setOutra(true);
-      mudar((x) => ({ ...x, nome: '' }));
-      return;
-    }
-    setOutra(false);
-    const e = disciplinas.find((x) => x.nome === valor);
-    mudar((x) => ({ ...x, nome: valor, componente: e?.componente ?? x.componente }));
-  };
+  const escolherDisciplina = (e: Escolha) =>
+    mudar((x) => ({
+      ...x,
+      nome: e.nome,
+      componente: e.componente,
+      // Uma UC escolhida como disciplina entra logo como módulo, se ainda não estiver.
+      modulos:
+        e.uc && !x.modulos.some((m) => m.codigo === e.uc!.codigo)
+          ? [...x.modulos, { id: uid(), codigo: e.uc.codigo, nome: e.uc.nome, quantidade: e.uc.horas, unidade: 'h', tarefas: [] }]
+          : x.modulos,
+    }));
 
   const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter((c) => c.codigo.startsWith('UC')), procura, 8) : [];
 
@@ -187,30 +178,10 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
           </select>
         </label>
         <label>Turma<input list="turmas" value={d.turma} placeholder="10.º M" onChange={(e) => set('turma', e.target.value)} /></label>
-        <label className="span2">Disciplina
-          <select value={outra ? '__outra' : conhecida ? d.nome : ''} onChange={(e) => escolherDisciplina(e.target.value)}>
-            <option value="" disabled>Escolher</option>
-            {COMPONENTES.map((c) => {
-              const lista = disciplinas.filter((x) => x.componente === c.id);
-              return lista.length ? (
-                <optgroup key={c.id} label={c.nome}>
-                  {lista.map((x) => <option key={x.nome} value={x.nome}>{x.nome}</option>)}
-                </optgroup>
-              ) : null;
-            })}
-            <option value="__outra">Outra</option>
-          </select>
-        </label>
-        {outra && (
-          <label className="span2">Nome da disciplina
-            <input value={d.nome} autoFocus onChange={(e) => set('nome', e.target.value)} />
-          </label>
-        )}
-        <label>Componente
-          <select value={d.componente} onChange={(e) => set('componente', e.target.value as Disciplina['componente'])}>
-            {COMPONENTES.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
-        </label>
+        <div className="span-all">
+          <span className="field-label">Disciplina</span>
+          <DisciplinaPicker nome={d.nome} componente={d.componente} catalogo={estado.catalogo} onEscolher={escolherDisciplina} />
+        </div>
         <label>Cor<input type="color" value={d.cor} onChange={(e) => set('cor', e.target.value)} /></label>
       </div>
 
