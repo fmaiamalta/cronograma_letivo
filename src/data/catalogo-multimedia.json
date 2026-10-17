@@ -1,0 +1,533 @@
+[
+ {
+  "codigo": "UC02629",
+  "nome": "Instalar e configurar sistemas operativos para ambientes em rede",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02236",
+  "nome": "Captar e tratar imagens digitais",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02140",
+  "nome": "Editar imagens bitmap",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00504",
+  "nome": "Produzir imagens bitmap para suportes digitais",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02208",
+  "nome": "Editar imagens vetoriais",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02630",
+  "nome": "Captar e editar som",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02631",
+  "nome": "Conceber animações 2D",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02209",
+  "nome": "Editar e animar em 3D",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02242",
+  "nome": "Executar e publicar animações para diferentes médias e suportes",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02258",
+  "nome": "Implementar os princípios do design de comunicação",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02632",
+  "nome": "Criar um guião audiovisual",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02199",
+  "nome": "Elaborar storyboard",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02233",
+  "nome": "Produzir vídeos",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02633",
+  "nome": "Editar vídeo",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00245",
+  "nome": "Desenvolver algoritmos",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02285",
+  "nome": "Conceber o design para páginas web",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02634",
+  "nome": "Criar páginas para a web em hipertexto",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02635",
+  "nome": "Criar um website com recurso a um sistema de gestão de conteúdos",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02249",
+  "nome": "Conceber e executar layouts para aplicações multimédia interativas",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02636",
+  "nome": "Implementar princípios de acessibilidade e inclusão na arquitetura multimédia",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02637",
+  "nome": "Criar e programar jogos simples",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02638",
+  "nome": "Produzir conteúdos de realidade aumentada",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02639",
+  "nome": "Criar narrativas transmedia de design imersivo e realidade virtual",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02640",
+  "nome": "Gerir um projeto multimédia",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02641",
+  "nome": "Implementar um projeto multimédia",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02642",
+  "nome": "Conceber plano de comunicação",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02643",
+  "nome": "Conceber um guião multimédia",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02644",
+  "nome": "Realizar vídeos",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02645",
+  "nome": "Realizar pós-produção de som",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02248",
+  "nome": "Conceber imagens para diferentes tipos de suportes e/ou aplicações",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02210",
+  "nome": "Criar e desenvolver conteúdos, animações e aplicações multimédia para dispositivos móveis",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00664",
+  "nome": "Criar bases de dados NoSQL",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02284",
+  "nome": "Conceber projetos em wireframe para produtos digitais",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02286",
+  "nome": "Conceber o design de interface para dispositivos móveis",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02646",
+  "nome": "Desenvolver aplicações móveis (no-code)",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02647",
+  "nome": "Configurar e programar microcontroladores",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02246",
+  "nome": "Prototipar sistemas interativos",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02648",
+  "nome": "Desenvolver animações 3D complexas",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02649",
+  "nome": "Publicar um website na internet",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02276",
+  "nome": "Criar projetos gráficos de comunicação e publicidade",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02650",
+  "nome": "Construir interfaces e animações interativas",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02651",
+  "nome": "Construir estilos em CSS (Cascadin Style Sheets)",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00623",
+  "nome": "Programar com sistemas de Inteligência Artificial",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00499",
+  "nome": "Implementar as normas legais a obras digitais",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02652",
+  "nome": "Publicitar nas redes sociais",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00031",
+  "nome": "Criar e desenvolver ideias de negócio",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00032",
+  "nome": "Elaborar o plano de negócios",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00035",
+  "nome": "Desenvolver competências pessoais e criativas",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00077",
+  "nome": "Aplicar storytelling na comunicação",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02653",
+  "nome": "Prestar informação sobre o setor de multimédia",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02654",
+  "nome": "Implementar as normas de segurança e saúde no trabalho no setor da multimédia",
+  "pontos": 2.25,
+  "horas": 25,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00034",
+  "nome": "Colaborar e trabalhar em equipa",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC00033",
+  "nome": "Comunicar e interagir em contexto profissional",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "UC02655",
+  "nome": "Interagir em inglês no setor da multimédia",
+  "pontos": 4.5,
+  "horas": 50,
+  "componente": "tecnologica",
+  "opcional": true,
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0010S20",
+  "nome": "Português",
+  "horas": 320,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0LE001S00",
+  "nome": "Inglês (LE I, continuação)",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0011S00",
+  "nome": "Área de Integração",
+  "horas": 220,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0013S00",
+  "nome": "Educação Física",
+  "horas": 140,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0012S00",
+  "nome": "Tecnologias da Informação e Comunicação",
+  "horas": 100,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0038000",
+  "nome": "Oferta de Escola",
+  "horas": 100,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0151000",
+  "nome": "Educação Moral e Religiosa",
+  "horas": 81,
+  "componente": "sociocultural",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0031C00",
+  "nome": "História da Cultura e das Artes",
+  "horas": 200,
+  "componente": "cientifica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0032C20",
+  "nome": "Matemática",
+  "horas": 200,
+  "componente": "cientifica",
+  "qualificacao": "Técnico/a de Multimédia"
+ },
+ {
+  "codigo": "DACP0026C00",
+  "nome": "Física",
+  "horas": 100,
+  "componente": "cientifica",
+  "qualificacao": "Técnico/a de Multimédia"
+ }
+]

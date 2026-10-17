@@ -1,0 +1,195 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
+import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
+import type { CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
+import { COMPONENTES } from '../lib/types';
+
+interface Props {
+  calendario: CalendarioEscolar;
+  planos: PlanoDisciplina[];
+  periodosTurma: PeriodoTurma[];
+  hoje: ISODate;
+  pxDia: number;
+  onAbrir: (disciplinaId: string, moduloId: string) => void;
+}
+
+function larguraRotulo(): number {
+  return typeof window !== 'undefined' && window.innerWidth < 760 ? 150 : 220;
+}
+
+function primeiroDoMes(iso: ISODate): ISODate {
+  return iso.slice(0, 8) + '01';
+}
+
+function fimDoMes(iso: ISODate): ISODate {
+  const [y, m] = iso.split('-').map(Number);
+  const prox = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+  return addDays(prox, -1);
+}
+
+/** Separa as aulas de um módulo em troços, partidos por interrupções e períodos sem aulas. */
+function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate }[]): [ISODate, ISODate][] {
+  const out: [ISODate, ISODate][] = [];
+  const s = pm.sessoes;
+  if (!s.length) return out;
+  let ini = s[0].data;
+  for (let i = 1; i < s.length; i++) {
+    const a = s[i - 1].data;
+    const b = s[i].data;
+    if (quebras.some((q) => q.inicio > a && q.inicio < b)) {
+      out.push([ini, a]);
+      ini = b;
+    }
+  }
+  out.push([ini, s[s.length - 1].data]);
+  return out;
+}
+
+export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir }: Props) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [LARGURA_ROTULO, setRotulo] = useState(larguraRotulo);
+  useEffect(() => {
+    const f = () => setRotulo(larguraRotulo());
+    window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
+  }, []);
+
+  const inicio = primeiroDoMes(calendario.inicio);
+  const fimAno = planos.reduce(
+    (m, p) => (p.fim > m ? p.fim : m),
+    Object.values(calendario.fimPorAno).reduce((a, b) => (b > a ? b : a)),
+  );
+  const fim = fimDoMes(fimAno);
+  const dias = diffDays(inicio, fim) + 1;
+  const largura = dias * pxDia;
+  const x = (iso: ISODate) => diffDays(inicio, iso) * pxDia;
+
+  const meses = useMemo(() => {
+    const out: { iso: ISODate; nome: string }[] = [];
+    for (let d = inicio; d <= fim; d = addDays(fimDoMes(d), 1)) out.push({ iso: d, nome: MESES[Number(d.slice(5, 7)) - 1] });
+    return out;
+  }, [inicio, fim]);
+
+  const hojeVisivel = hoje >= inicio && hoje <= fim;
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || !hojeVisivel) return;
+    // Deixa o dia de hoje a um terço da zona visível das barras.
+    el.scrollLeft = Math.max(0, x(hoje) - (el.clientWidth - LARGURA_ROTULO) / 3);
+    // Só ao abrir e quando muda o zoom.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pxDia, LARGURA_ROTULO]);
+
+  if (!planos.length) return null;
+
+  return (
+    <div className="gantt" ref={scroller} style={{ ['--rotulo' as string]: `${LARGURA_ROTULO}px` }}>
+      <div className="gantt-inner" style={{ width: LARGURA_ROTULO + largura }}>
+        <div className="gantt-head">
+          <div className="gantt-label gantt-corner">{calendario.anoLetivo}</div>
+          <div className="gantt-track" style={{ width: largura }}>
+            {meses.map((m) => (
+              <div key={m.iso} className="gantt-month" style={{ left: x(m.iso), width: (diffDays(m.iso, fimDoMes(m.iso)) + 1) * pxDia }}>
+                {m.nome}
+              </div>
+            ))}
+            {hojeVisivel && (
+              <div className="gantt-today-pill" style={{ left: x(hoje) + pxDia / 2 }}>
+                Hoje {fmtShort(hoje)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="gantt-body">
+          <div className="gantt-overlay" style={{ left: LARGURA_ROTULO, width: largura }} aria-hidden>
+            {meses.map((m) => (
+              <div key={m.iso} className="gantt-gridline" style={{ left: x(m.iso) }} />
+            ))}
+            {calendario.interrupcoes.map((i) => (
+              <div key={i.id} className="gantt-break" style={{ left: x(i.inicio), width: (diffDays(i.inicio, i.fim) + 1) * pxDia }}>
+                <span>{i.nome}</span>
+              </div>
+            ))}
+            {calendario.feriados.map((f) => (
+              <div key={f.id} className="gantt-holiday" title={`${f.nome} (${fmtLong(f.data)})`} style={{ left: x(f.data) + pxDia / 2 }} />
+            ))}
+            {hojeVisivel && <div className="gantt-today" style={{ left: x(hoje) + pxDia / 2 }} />}
+          </div>
+
+          {planos.map((p) => {
+            const d = p.disciplina;
+            const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
+            const quebras = [...calendario.interrupcoes, ...periodos];
+            const comp = COMPONENTES.find((c) => c.id === d.componente)?.nome;
+            const falta = p.temposNecessarios - p.temposDisponiveis;
+            return (
+              <section key={d.id} className="gantt-group" style={{ ['--cor' as string]: d.cor }}>
+                <div className="gantt-row gantt-row-group">
+                  <div className="gantt-label">
+                    <strong>{d.turma} | {d.nome}</strong>
+                    <small>{comp}{falta > 0 && <span className="warn"> · faltam {falta} tempos</span>}</small>
+                  </div>
+                  <div className="gantt-track" style={{ width: largura }} />
+                </div>
+                {p.modulos.map((pm) => {
+                  const m = pm.modulo;
+                  const pct = pm.totalTempos ? Math.round((pm.dados / pm.totalTempos) * 100) : 0;
+                  return (
+                    <div className="gantt-row" key={m.id}>
+                      <button className="gantt-label gantt-mod" onClick={() => onAbrir(d.id, m.id)}>
+                        <span className="mod-name">{m.codigo ? `${m.codigo} · ` : ''}{m.nome}</span>
+                        <small>
+                          {pm.inicio ? `${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}` : 'sem aulas marcadas'} | {pm.totalTempos} tempos
+                        </small>
+                        <span className="mod-progress" aria-label={`${pct}% dado`}>
+                          <span style={{ width: `${pct}%` }} />
+                        </span>
+                        {pm.emFalta > 0 && <small className="warn">Não cabe: faltam {pm.emFalta} tempos</small>}
+                      </button>
+                      <div className="gantt-track" style={{ width: largura }}>
+                        {periodos.map((pt) => (
+                          <div key={pt.id} className="gantt-turma-block" style={{ left: x(pt.inicio), width: (diffDays(pt.inicio, pt.fim) + 1) * pxDia }} title={`${pt.nome}: ${fmtLong(pt.inicio)} a ${fmtLong(pt.fim)}`}>
+                            <span>{pt.nome}</span>
+                          </div>
+                        ))}
+                        {trocos(pm, quebras).map(([a, b]) => (
+                          <div key={a} className="gantt-seg" style={{ left: x(a) + pxDia / 2, width: Math.max(1, x(b) - x(a)) }} />
+                        ))}
+                        {pm.sessoes.map((s) => (
+                          <div
+                            key={s.data}
+                            className={'gantt-tick' + (s.data <= hoje ? ' past' : '')}
+                            title={`${fmtLong(s.data)}: ${s.tempos} ${s.tempos === 1 ? 'tempo' : 'tempos'}`}
+                            style={{ left: x(s.data), width: Math.max(2, pxDia * 0.7), height: 6 + Math.min(s.tempos, 4) * 3 }}
+                          />
+                        ))}
+                        {pm.inicio && (
+                          <span className="gantt-date" style={{ left: x(pm.inicio) }}>{fmtShort(pm.inicio)}</span>
+                        )}
+                        {pm.fim && pm.fim !== pm.inicio && (
+                          <span className="gantt-date end" style={{ left: x(pm.fim) + pxDia }}>{fmtShort(pm.fim)}</span>
+                        )}
+                        {m.tarefas.filter((t) => t.data).map((t) => (
+                          <button
+                            key={t.id}
+                            className={'gantt-task' + (t.feita ? ' done' : t.data! < hoje ? ' late' : '')}
+                            style={{ left: x(t.data!) + pxDia / 2 }}
+                            title={`${t.feita ? '✓ ' : ''}${t.titulo} (${fmtLong(t.data!)})`}
+                            onClick={() => onAbrir(d.id, m.id)}
+                            aria-label={`Tarefa: ${t.titulo}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
