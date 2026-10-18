@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
 import type { CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
-import { COMPONENTES } from '../lib/types';
+import { COMPONENTES, ehGeral } from '../lib/types';
 
 interface Props {
   calendario: CalendarioEscolar;
@@ -89,7 +89,7 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
   const inicio = primeiroDoMes(calendario.inicio);
   const fimAno = planos.reduce(
     (m, p) => (p.fim > m ? p.fim : m),
-    Object.values(calendario.fimPorAno).reduce((a, b) => (b > a ? b : a)),
+    Object.values(calendario.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!,
   );
   const fim = fimDoMes(fimAno);
   const dias = diffDays(inicio, fim) + 1;
@@ -172,22 +172,24 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
             const quebras = [...calendario.interrupcoes, ...periodos];
             const comp = COMPONENTES.find((c) => c.id === d.componente)?.nome;
             const falta = p.temposNecessarios - p.temposDisponiveis;
+            // Ensino geral: a disciplina é uma só linha, sem cabeçalho de grupo.
+            const geral = ehGeral(d);
             return (
-              <section key={d.id} className="gantt-group" style={{ ['--cor' as string]: d.cor }}>
-                <div className="gantt-row gantt-row-group">
+              <section key={d.id} className={'gantt-group' + (geral ? ' geral' : '')} style={{ ['--cor' as string]: d.cor }}>
+                {!geral && <div className="gantt-row gantt-row-group">
                   <div className="gantt-label">
                     <strong>{d.turma} | {d.nome}</strong>
                     <small>{comp}{falta > 0 && <span className="warn"> · faltam {falta} tempos</span>}</small>
                   </div>
                   <div className="gantt-track" style={{ width: largura }} />
-                </div>
+                </div>}
                 {p.modulos.map((pm) => {
                   const m = pm.modulo;
                   const pct = pm.totalTempos ? Math.round((pm.dados / pm.totalTempos) * 100) : 0;
                   return (
                     <div className="gantt-row" key={m.id}>
                       <button className="gantt-label gantt-mod" onClick={() => onAbrir(d.id, m.id)}>
-                        <span className="mod-name">{m.codigo ? `${m.codigo} · ` : ''}{m.nome}</span>
+                        <span className="mod-name">{geral ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo} · ` : ''}{m.nome}</>}</span>
                         <small>
                           {pm.inicio ? `${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}` : 'sem aulas marcadas'} | {pm.totalTempos} tempos
                         </small>

@@ -83,7 +83,7 @@ function anosCitados(depois: string): Ano[] {
   const corte = depois.search(new RegExp(String.raw`\d{1,2}\s*(?:[/.-]\s*\d|(?:de\s+)?${MES_TXT})`, 'i'));
   const trecho = corte >= 0 ? depois.slice(0, corte) : depois;
   const anos = [...trecho.matchAll(/(\d{1,2})\s*[º°.]/g)].map((m) => Number(m[1]));
-  return anos.filter((a): a is Ano => a === 10 || a === 11 || a === 12);
+  return anos.filter((a): a is Ano => a >= 5 && a <= 12);
 }
 
 function ultimoNome(texto: string, nomes: [RegExp, string][]): string | undefined {
@@ -242,7 +242,7 @@ export function lerGrelha(itens: ItemPDF[], anoInicial: number): SugestaoCalenda
       const etiqueta = celula[2].trim();
       if (!etiqueta) continue;
       const t = semAcentos(etiqueta);
-      const anos = [...etiqueta.matchAll(/(\d{1,2})\s*[º°]/g)].map((x) => Number(x[1])).filter((a): a is Ano => a >= 10 && a <= 12);
+      const anos = [...etiqueta.matchAll(/(\d{1,2})\s*[º°]/g)].map((x) => Number(x[1])).filter((a): a is Ano => a >= 5 && a <= 12);
       if (anos.length && mes >= 5 && mes <= 7) {
         for (const a of anos) out.fimPorAno[a] ??= data;
         continue;

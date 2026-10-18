@@ -1,5 +1,5 @@
 import { addDays, inRange, weekday } from './dates';
-import type { CalendarioEscolar, Disciplina, ISODate, Modulo, PeriodoTurma } from './types';
+import { ensinoDe, fimDoAno, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
 
 export interface DiaDeAula {
   data: ISODate;
@@ -58,8 +58,9 @@ export function motivoSemAula(
 }
 
 export function limitesDisciplina(d: Disciplina, cal: CalendarioEscolar): { inicio: ISODate; fim: ISODate } {
-  const inicio = d.inicio && d.inicio > cal.inicio ? d.inicio : cal.inicio;
-  const fimAno = cal.fimPorAno[d.ano];
+  const inicioNivel = cal.inicioPorEnsino?.[ensinoDe(d)] ?? cal.inicio;
+  const inicio = d.inicio && d.inicio > inicioNivel ? d.inicio : inicioNivel;
+  const fimAno = fimDoAno(cal, d.ano);
   const fim = d.fim && d.fim < fimAno ? d.fim : fimAno;
   return { inicio, fim };
 }
@@ -89,9 +90,11 @@ export function planear(
 ): PlanoDisciplina {
   const { inicio, fim } = limitesDisciplina(d, cal);
   const dias = diasDeAula(d, cal, periodosTurma);
+  const temposAno = dias.reduce((s, x) => s + x.tempos, 0);
   const modulos: PlanoModulo[] = d.modulos.map((modulo) => ({
     modulo,
-    totalTempos: temposDoModulo(modulo, cal.minutosPorTempo),
+    // Disciplina anual (ensino geral): ocupa todas as aulas do ano.
+    totalTempos: modulo.anual ? temposAno : temposDoModulo(modulo, cal.minutosPorTempo),
     sessoes: [],
     dados: 0,
     emFalta: 0,

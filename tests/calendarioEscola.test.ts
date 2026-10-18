@@ -29,7 +29,10 @@ describe('PDF de calendário em grelha', () => {
   it('lê os dois inícios e o fim por ano', () => {
     expect(s.inicios.map((x) => x.data)).toEqual(['2026-09-15', '2026-09-21']);
     expect(s.inicios[1].nota).toMatch(/Secund/);
-    expect(s.fimPorAno).toEqual({ 10: '2027-06-11', 11: '2027-06-04', 12: '2027-06-04' });
+    expect(s.fimPorAno).toEqual({
+      5: '2027-06-11', 6: '2027-06-11', 7: '2027-06-11', 8: '2027-06-11', 9: '2027-06-04',
+      10: '2027-06-11', 11: '2027-06-04', 12: '2027-06-04',
+    });
   });
 
   it('lê os feriados da grelha e ignora dias comemorativos', () => {

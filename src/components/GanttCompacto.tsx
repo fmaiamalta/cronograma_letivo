@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
-import type { CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
+import { ehGeral, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
 import { fimDoMes, primeiroDoMes, trocos } from './Gantt';
 
 interface Props {
@@ -33,7 +33,7 @@ export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, o
   }, []);
 
   const inicio = primeiroDoMes(calendario.inicio);
-  const fimAno = planos.reduce((m, p) => (p.fim > m ? p.fim : m), Object.values(calendario.fimPorAno).reduce((a, b) => (b > a ? b : a)));
+  const fimAno = planos.reduce((m, p) => (p.fim > m ? p.fim : m), Object.values(calendario.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!);
   const fim = fimDoMes(fimAno);
   const dias = diffDays(inicio, fim) + 1;
   const pxDia = (larguraVisivel / dias) * zoom;
@@ -104,15 +104,17 @@ export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, o
             const quebras = [...calendario.interrupcoes, ...periodos];
             return (
               <section key={d.id} style={{ ['--cor' as string]: d.cor }}>
-                <div className="gc-group">
-                  <span className="gc-sticky">{d.turma} | {d.nome}</span>
-                </div>
+                {!ehGeral(d) && (
+                  <div className="gc-group">
+                    <span className="gc-sticky">{d.turma} | {d.nome}</span>
+                  </div>
+                )}
                 {p.modulos.map((pm) => {
                   const m = pm.modulo;
                   return (
                     <div key={m.id} className="gc-row" onClick={() => onAbrir(d.id, m.id)}>
                       <span className="gc-sticky gc-mod">
-                        {m.codigo ? `${m.codigo.replace(/^UC0*/, '')} · ` : ''}{m.nome}
+                        {ehGeral(d) ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo.replace(/^UC0*/, '')} · ` : ''}{m.nome}</>}
                         {pm.inicio && <b> {fmtShort(pm.inicio)}–{fmtShort(pm.fim!)}</b>}
                       </span>
                       {periodos.map((pt) => (

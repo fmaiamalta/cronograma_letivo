@@ -531,3 +531,8 @@ textarea.codigo {
 .gc-task-range { position: absolute; bottom: 16px; height: 3px; z-index: 4; border-radius: 2px; background: var(--cor); }
 .gc-task-range.done { background: var(--ok); }
 .gc-task-range.late { background: var(--today); }
+
+/* Ensino geral: disciplina numa só linha, com a cor à esquerda */
+.gantt-group.geral .gantt-mod { border-left: 5px solid var(--cor); }
+.gantt-group.geral .gantt-row { border-top: 1px solid var(--border); }
+.gc-row:has(.gc-mod strong) { border-left: 4px solid var(--cor); }

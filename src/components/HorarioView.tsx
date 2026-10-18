@@ -3,7 +3,7 @@ import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
 import { temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
-import { type Ano, type Disciplina, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { ANOS, COMPONENTES, ehGeral, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
@@ -171,8 +171,32 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
     if (!e) registar(novo);
   };
 
+  const geral = ehGeral(d);
+
+  /** Ensino geral: um só "módulo" anual com o nome da disciplina (mantém as tarefas). */
+  const moduloAnual = (x: Disciplina, nome: string): Modulo[] => {
+    const a = x.modulos.find((m) => m.anual);
+    return [{ id: a?.id ?? uid(), tarefas: a?.tarefas ?? [], nome, quantidade: 0, unidade: 't', anual: true }];
+  };
+
+  /** Mudar de ano ou de ensino; ao mudar de ensino a disciplina escolhida deixa de valer. */
+  const mudarNivel = (ano: Ano, ensino: Ensino) =>
+    mudar((x) => {
+      if (ensinoDe(x) === ensino) return { ...x, ano };
+      const componente = COMPONENTES.find((c) => c.ensino === ensino)!.id;
+      const modulos = ensino === 'profissional' ? x.modulos.filter((m) => !m.anual) : moduloAnual(x, '');
+      return { ...x, ano, ensino, nome: '', componente, modulos };
+    });
+
+  const mudarAno = (ano: Ano) => {
+    const atual = ensinoDe(d);
+    mudarNivel(ano, ano <= 9 ? 'basico' : atual === 'basico' ? 'secundario' : atual);
+  };
+
   const escolherDisciplina = (e: Escolha) =>
-    mudar((x) => ({
+    geral
+      ? mudar((x) => ({ ...x, nome: e.nome, componente: e.componente, modulos: moduloAnual(x, e.nome) }))
+      : mudar((x) => ({
       ...x,
       nome: e.nome,
       componente: e.componente,
@@ -191,14 +215,19 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
     <div className="card-body">
       <div className="grid-form">
         <label>Ano
-          <select value={d.ano} onChange={(e) => set('ano', Number(e.target.value) as Ano)}>
-            <option value={10}>10.º</option><option value={11}>11.º</option><option value={12}>12.º</option>
+          <select value={d.ano} onChange={(e) => mudarAno(Number(e.target.value) as Ano)}>
+            {ANOS.map((a) => <option key={a} value={a}>{a}.º</option>)}
+          </select>
+        </label>
+        <label>Ensino
+          <select value={ensinoDe(d)} onChange={(e) => mudarNivel(d.ano, e.target.value as Ensino)} disabled={d.ano <= 9}>
+            {ENSINOS.filter((x) => x.anos.includes(d.ano)).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
           </select>
         </label>
         <label>Turma<input list="turmas" value={d.turma} placeholder="10.º M" onChange={(e) => set('turma', e.target.value)} /></label>
         <div className="span-all">
           <span className="field-label">Disciplina</span>
-          <DisciplinaPicker nome={d.nome} componente={d.componente} catalogo={estado.catalogo} onEscolher={escolherDisciplina} />
+          <DisciplinaPicker key={`${ensinoDe(d)}-${d.ano}`} nome={d.nome} componente={d.componente} ensino={ensinoDe(d)} ano={d.ano} catalogo={estado.catalogo} onEscolher={escolherDisciplina} />
         </div>
         <label>Cor<input type="color" value={d.cor} onChange={(e) => set('cor', e.target.value)} /></label>
       </div>
@@ -248,7 +277,12 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
         </div>
       </fieldset>
 
-      <fieldset>
+      {geral && plano && (
+        <p className="small muted">
+          Disciplina anual: {plano.temposDisponiveis} tempos ({plano.dias.length} dias de aula), de {fmtLong(plano.inicio)} a {fmtLong(plano.fim)}.
+        </p>
+      )}
+      {!geral && <fieldset>
         <legend>UC e módulos, por ordem</legend>
         <div className="mod-list">
           {d.modulos.map((m, i) => {
@@ -308,7 +342,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
             Necessários: {plano.temposNecessarios} tempos. Disponíveis até {fmtLong(plano.fim)}: {plano.temposDisponiveis} tempos ({plano.dias.length} dias).
           </p>
         )}
-      </fieldset>
+      </fieldset>}
 
       <div className="row end">
         <button className="btn danger" onClick={apagar}>Apagar disciplina</button>

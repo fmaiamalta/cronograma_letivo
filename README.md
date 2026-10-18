@@ -1,6 +1,6 @@
 # Cronograma Letivo
 
-PWA para professores de cursos profissionais. Cada professor mete o seu horário
+PWA para professores do ensino básico, secundário e profissional. Cada professor mete o seu horário
 (turmas, tempos por dia, UC por ordem) e a app gera o cronograma do ano, com as
 interrupções letivas, os feriados e os períodos de FCT de cada turma.
 
@@ -8,6 +8,9 @@ Publicada em `https://fmaiamalta.github.io/cronograma_letivo/`. Cada push para `
 
 ## O que faz
 
+- Ensino básico (5.º a 9.º) e secundário científico-humanístico: cada disciplina
+  ocupa o ano todo numa só linha, partida nas interrupções; listas de disciplinas
+  por área e por ano.
 - Distribui as UC pelos dias de aula. Quando uma UC acaba a meio de um dia, a
   seguinte começa nesse dia.
 - Salta interrupções, feriados, períodos da turma (FCT) e dias sem aula.

@@ -4,12 +4,22 @@ import { fmtLong, uid, weekday, DIAS_SEMANA } from '../lib/dates';
 import { lerFicheiro } from '../lib/fileText';
 import { calendario2026 } from '../lib/presets';
 import { linkCalendario } from '../lib/store';
-import type { Ano, CalendarioEscolar, Estado, Feriado, Periodo } from '../lib/types';
+import { ANOS, type Ano, type CalendarioEscolar, type Ensino, type Estado, type Feriado, type Periodo } from '../lib/types';
 import { IconTrash } from './icons';
 
 interface Props {
   estado: Estado;
   atualizar: (f: (e: Estado) => Estado) => void;
+}
+
+/** "21 Setembro - Secundário" e "15 Setembro - Pré-Escolar, 1º, 2º e 3º Ciclo" dão o início de cada nível. */
+function iniciosPorNivel(inicios: { data: string; nota: string }[]): Partial<Record<Ensino, string>> {
+  const out: Partial<Record<Ensino, string>> = {};
+  for (const i of inicios) {
+    if (/secund/i.test(i.nota)) out.secundario = i.data;
+    else if (/ciclo|b[aá]sico/i.test(i.nota)) out.basico = i.data;
+  }
+  return out;
 }
 
 export function CalendarioView({ estado, atualizar }: Props) {
@@ -60,6 +70,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
     setCal((c) => ({
       ...c,
       inicio: sugestao.inicioEscolhido ?? c.inicio,
+      inicioPorEnsino: { ...c.inicioPorEnsino, ...iniciosPorNivel(sugestao.inicios) },
       fimPorAno,
       importadoDe: sugestao.ficheiro,
       // O calendário é de cada escola: por defeito o ficheiro substitui o que lá estava.
@@ -152,7 +163,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
             </fieldset>
           )}
           <ul className="check-list">
-            {([10, 11, 12] as Ano[]).filter((a) => sugestao.fimPorAno[a]).map((a) => (
+            {ANOS.filter((a) => sugestao.fimPorAno[a]).map((a) => (
               <li key={a}><label><input type="checkbox" checked={sugestao.escolhidas.has(`fim:${a}`)} onChange={() => alternar(`fim:${a}`)} /> Fim das aulas do {a}.º ano: {fmtLong(sugestao.fimPorAno[a]!)}</label></li>
             ))}
             {sugestao.interrupcoes.map((i) => (
@@ -178,8 +189,14 @@ export function CalendarioView({ estado, atualizar }: Props) {
           <label>Ano letivo<input value={cal.anoLetivo} onChange={(e) => set('anoLetivo', e.target.value)} /></label>
           <label>Escola<input value={cal.escola} placeholder="Nome da escola" onChange={(e) => set('escola', e.target.value)} /></label>
           <label>Minutos por tempo<input type="number" min={30} max={120} value={cal.minutosPorTempo} onChange={(e) => set('minutosPorTempo', Number(e.target.value) || 50)} /></label>
-          <label>Início das aulas<input type="date" value={cal.inicio} onChange={(e) => e.target.value && set('inicio', e.target.value)} /></label>
-          {([10, 11, 12] as Ano[]).map((a) => (
+          <label>Início das aulas (profissional)<input type="date" value={cal.inicio} onChange={(e) => e.target.value && set('inicio', e.target.value)} /></label>
+          <label>Início no básico
+            <input type="date" value={cal.inicioPorEnsino?.basico ?? ''} onChange={(e) => set('inicioPorEnsino', { ...cal.inicioPorEnsino, basico: e.target.value || undefined })} />
+          </label>
+          <label>Início no secundário
+            <input type="date" value={cal.inicioPorEnsino?.secundario ?? ''} onChange={(e) => set('inicioPorEnsino', { ...cal.inicioPorEnsino, secundario: e.target.value || undefined })} />
+          </label>
+          {ANOS.map((a) => (
             <label key={a}>Fim das aulas {a}.º ano
               <input type="date" value={cal.fimPorAno[a]} onChange={(e) => e.target.value && set('fimPorAno', { ...cal.fimPorAno, [a]: e.target.value })} />
             </label>

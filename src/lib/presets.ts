@@ -15,7 +15,9 @@ export function calendario2026(): CalendarioEscolar {
     anoLetivo: '2026/2027',
     escola: '',
     inicio: '2026-09-15',
-    fimPorAno: { 10: '2027-06-11', 11: '2027-06-04', 12: '2027-06-04' },
+    // Despacho 10430/2026: os científico-humanísticos começam a 21/09.
+    inicioPorEnsino: { secundario: '2026-09-21' },
+    fimPorAno: { 5: '2027-06-11', 6: '2027-06-11', 7: '2027-06-11', 8: '2027-06-11', 9: '2027-06-04', 10: '2027-06-11', 11: '2027-06-04', 12: '2027-06-04' },
     interrupcoes: [
       { id: uid(), nome: 'Natal', inicio: '2026-12-16', fim: '2026-12-31' },
       { id: uid(), nome: 'Carnaval', inicio: '2027-02-08', fim: '2027-02-10' },
@@ -77,6 +79,18 @@ export function exemplo(): Pick<Estado, 'disciplinas' | 'periodosTurma'> {
       id: uid(), turma: '10.º M', nome: 'Sistemas de Informação', ano: 10, componente: 'tecnologica', cor: CORES[6],
       tempos: semana(1, 0, 0, 1, 0), diasSemAula: [],
       modulos: [mod('Criar páginas para a web em hipertexto', 25, 'h', 'UC02634'), mod('Construir estilos em CSS', 25, 'h', 'UC02651')],
+    },
+    {
+      id: uid(), turma: '11.º A', nome: 'Matemática A', ano: 11, ensino: 'secundario', componente: 'especifica', cor: CORES[4],
+      tempos: semana(2, 0, 2, 0, 2), diasSemAula: [],
+      modulos: [{ ...mod('Matemática A', 0, 't'), anual: true, tarefas: [
+        { id: uid(), titulo: 'Teste 1', descricao: 'Funções e gráficos', data: '2026-11-05', feita: false },
+      ] }],
+    },
+    {
+      id: uid(), turma: '7.º B', nome: 'Tecnologias da Informação e Comunicação', ano: 7, ensino: 'basico', componente: 'expressoes', cor: CORES[8],
+      tempos: semana(0, 0, 0, 1, 0), diasSemAula: [],
+      modulos: [{ ...mod('Tecnologias da Informação e Comunicação', 0, 't'), anual: true }],
     },
   ];
   const periodosTurma: PeriodoTurma[] = [

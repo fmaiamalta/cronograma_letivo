@@ -105,3 +105,22 @@ describe('planear', () => {
     expect(new Set(vistos).size).toBe(10);
   });
 });
+
+describe('ensino geral (disciplina anual)', () => {
+  const cal = { ...calendario2026(), inicioPorEnsino: { secundario: '2026-09-21' } };
+  it('ocupa todas as aulas do ano e começa no início do nível', () => {
+    const d = disciplina({ ano: 11, ensino: 'secundario', modulos: [{ ...mod('Matemática A', 0), anual: true }] });
+    const p = planear(d, cal, [], '2026-09-01');
+    expect(p.modulos[0].totalTempos).toBe(p.temposDisponiveis);
+    expect(p.modulos[0].emFalta).toBe(0);
+    expect(p.modulos[0].inicio).toBe('2026-09-21');
+    expect(p.modulos[0].fim! <= '2027-06-04').toBe(true);
+  });
+  it('9.º ano acaba a 4/6 e 5.º a 11/6', () => {
+    const d9 = planear(disciplina({ ano: 9, ensino: 'basico', modulos: [{ ...mod('Português', 0), anual: true }] }), cal, [], '2026-09-01');
+    const d5 = planear(disciplina({ ano: 5, ensino: 'basico', modulos: [{ ...mod('Português', 0), anual: true }] }), cal, [], '2026-09-01');
+    expect(d9.fim).toBe('2027-06-04');
+    expect(d5.fim).toBe('2027-06-11');
+    expect(d5.inicio).toBe('2026-09-15');
+  });
+});

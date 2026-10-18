@@ -117,12 +117,12 @@ export function TarefaForm({ estado, inicial, onGravar, onApagar, onFechar }: Pr
             {disciplinas.map((d) => <option key={d.id} value={d.id}>{d.nome || 'Sem nome'}</option>)}
           </select>
         </label>
-        <label>Módulo
+        {!modulos.some((m) => m.anual) && <label>Módulo
           <select value={mId} onChange={(e) => setMId(e.target.value)} disabled={!modulos.length}>
             {!modulos.length && <option value="">Sem módulos</option>}
             {modulos.map((m) => <option key={m.id} value={m.id}>{m.codigo ? `${m.codigo} · ` : ''}{m.nome || 'Sem nome'}</option>)}
           </select>
-        </label>
+        </label>}
 
         <div className="row wrap end">
           {onApagar && <button type="button" className="btn danger" onClick={() => confirm(`Apagar "${t0?.titulo}"?`) && onApagar()}>Apagar</button>}

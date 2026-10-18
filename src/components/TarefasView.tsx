@@ -29,7 +29,7 @@ export function TarefasView({ estado, hoje, soLeitura, onAlternar, onAbrir, onNo
   const [verFeitas, setVerFeitas] = useState(false);
   const todas: Linha[] = estado.disciplinas.flatMap((d) =>
     d.modulos.flatMap((m) =>
-      m.tarefas.map((t) => ({ t, dId: d.id, mId: m.id, cor: d.cor, onde: `${d.turma.startsWith(String(d.ano)) ? '' : `${d.ano}.º · `}${d.turma} | ${d.nome} · ${m.codigo ?? m.nome}` })),
+      m.tarefas.map((t) => ({ t, dId: d.id, mId: m.id, cor: d.cor, onde: `${d.turma.startsWith(String(d.ano)) ? '' : `${d.ano}.º · `}${d.turma} | ${d.nome}${m.anual ? '' : ` · ${m.codigo ?? m.nome}`}` })),
     ),
   );
   const ord = (a: Linha, b: Linha) => (a.t.data ?? '9999').localeCompare(b.t.data ?? '9999');

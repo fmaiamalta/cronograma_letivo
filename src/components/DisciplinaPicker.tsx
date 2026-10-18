@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { DISCIPLINAS_ESCOLA } from '../data/disciplinas';
+import { DISCIPLINAS_BASICO, DISCIPLINAS_ESCOLA, DISCIPLINAS_SECUNDARIO } from '../data/disciplinas';
 import { codigoVisivel, ehDisciplina, ehUC } from '../lib/catalog';
-import { COMPONENTES, type Componente, type EntradaCatalogo } from '../lib/types';
+import { COMPONENTES, type Ano, type Componente, type EntradaCatalogo, type Ensino } from '../lib/types';
 
 export interface Escolha {
   nome: string;
@@ -13,6 +13,8 @@ export interface Escolha {
 interface Props {
   nome: string;
   componente: Componente;
+  ensino: Ensino;
+  ano: Ano;
   catalogo: EntradaCatalogo[];
   onEscolher: (e: Escolha) => void;
 }
@@ -20,9 +22,14 @@ interface Props {
 interface Opcao {
   nome: string;
   detalhe?: string;
+  grupo?: string;
 }
 
-function opcoes(componente: Componente, catalogo: EntradaCatalogo[]): Opcao[] {
+function opcoes(componente: Componente, catalogo: EntradaCatalogo[], ensino: Ensino, ano: Ano): Opcao[] {
+  if (ensino !== 'profissional') {
+    const lista = ensino === 'basico' ? DISCIPLINAS_BASICO : DISCIPLINAS_SECUNDARIO;
+    return lista.filter((d) => d.componente === componente && d.anos.includes(ano)).map((d) => ({ nome: d.nome, grupo: d.grupo }));
+  }
   return [
     ...catalogo
       .filter((c) => ehDisciplina(c) && c.componente === componente)
@@ -86,7 +93,7 @@ function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; c
 }
 
 /** Escolha da disciplina em dois passos: componente e depois disciplina ou UC. */
-export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Props) {
+export function DisciplinaPicker({ nome, componente, ensino, ano, catalogo, onEscolher }: Props) {
   const [aberto, setAberto] = useState(!nome);
   const [grupo, setGrupo] = useState<Componente | null>(nome ? componente : null);
   const [outra, setOutra] = useState('');
@@ -114,7 +121,7 @@ export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Pro
 
   return (
     <div className="picker">
-      {COMPONENTES.map((c) => {
+      {COMPONENTES.filter((c) => c.ensino === ensino).map((c) => {
         const aberta = grupo === c.id;
         return (
           <div key={c.id} className={'picker-group' + (aberta ? ' open' : '')}>
@@ -132,8 +139,9 @@ export function DisciplinaPicker({ nome, componente, catalogo, onEscolher }: Pro
             {aberta && c.id !== 'tecnologica' && (
               <div className="picker-body">
                 <ul>
-                  {opcoes(c.id, catalogo).map((o) => (
+                  {opcoes(c.id, catalogo, ensino, ano).map((o, i, l) => (
                     <li key={o.nome}>
+                      {o.grupo && o.grupo !== l[i - 1]?.grupo && <div className="picker-sub">{o.grupo}</div>}
                       <button type="button" className={o.nome === nome ? 'sel' : ''} onClick={() => escolher({ nome: o.nome, componente: c.id })}>
                         <span className="opt-line">
                           <span>{o.nome}</span>

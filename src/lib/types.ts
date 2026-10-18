@@ -1,16 +1,39 @@
 /** Datas sempre no formato ISO "AAAA-MM-DD", sem horas nem fuso. */
 export type ISODate = string;
 
-export type Componente = 'sociocultural' | 'cientifica' | 'tecnologica' | 'fct';
+export type Componente =
+  // Ensino profissional
+  | 'sociocultural' | 'cientifica' | 'tecnologica' | 'fct'
+  // Ensino básico
+  | 'linguas' | 'matcien' | 'expressoes' | 'outras'
+  // Ensino secundário científico-humanístico
+  | 'geral' | 'especifica' | 'transversal';
 
-export const COMPONENTES: { id: Componente; nome: string }[] = [
-  { id: 'sociocultural', nome: 'Sociocultural' },
-  { id: 'cientifica', nome: 'Científica' },
-  { id: 'tecnologica', nome: 'Tecnológica' },
-  { id: 'fct', nome: 'Contexto de Trabalho' },
+export type Ensino = 'profissional' | 'basico' | 'secundario';
+
+export const ENSINOS: { id: Ensino; nome: string; anos: Ano[] }[] = [
+  { id: 'profissional', nome: 'Profissional', anos: [10, 11, 12] },
+  { id: 'basico', nome: 'Básico', anos: [5, 6, 7, 8, 9] },
+  { id: 'secundario', nome: 'Secundário (científico-humanístico)', anos: [10, 11, 12] },
 ];
 
-export type Ano = 10 | 11 | 12;
+export const ANOS: Ano[] = [5, 6, 7, 8, 9, 10, 11, 12];
+
+export const COMPONENTES: { id: Componente; nome: string; ensino: Ensino }[] = [
+  { id: 'sociocultural', nome: 'Sociocultural', ensino: 'profissional' },
+  { id: 'cientifica', nome: 'Científica', ensino: 'profissional' },
+  { id: 'tecnologica', nome: 'Tecnológica', ensino: 'profissional' },
+  { id: 'fct', nome: 'Contexto de Trabalho', ensino: 'profissional' },
+  { id: 'linguas', nome: 'Línguas e Estudos Sociais', ensino: 'basico' },
+  { id: 'matcien', nome: 'Matemática e Ciências', ensino: 'basico' },
+  { id: 'expressoes', nome: 'Expressões e Tecnologias', ensino: 'basico' },
+  { id: 'outras', nome: 'Outras', ensino: 'basico' },
+  { id: 'geral', nome: 'Formação Geral', ensino: 'secundario' },
+  { id: 'especifica', nome: 'Formação Específica', ensino: 'secundario' },
+  { id: 'transversal', nome: 'Transversal / Opcional', ensino: 'secundario' },
+];
+
+export type Ano = 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export interface Periodo {
   id: string;
@@ -29,7 +52,10 @@ export interface CalendarioEscolar {
   anoLetivo: string; // "2026/2027"
   escola: string;
   inicio: ISODate;
-  fimPorAno: Record<Ano, ISODate>;
+  /** Fim das aulas por ano de escolaridade (os anos em falta usam o mais tardio). */
+  fimPorAno: Partial<Record<Ano, ISODate>>;
+  /** Início das aulas por nível, quando difere do início geral (ex.: secundário a 21/09). */
+  inicioPorEnsino?: Partial<Record<Ensino, ISODate>>;
   interrupcoes: Periodo[];
   feriados: Feriado[];
   /** Duração de um tempo letivo, em minutos. */
@@ -75,6 +101,8 @@ export interface Modulo {
   quantidade: number;
   unidade: 'h' | 't'; // horas ou tempos
   tarefas: Tarefa[];
+  /** Ensino geral: a disciplina inteira, que ocupa todas as aulas do ano. */
+  anual?: boolean;
 }
 
 /** Uma disciplina dada pelo professor a uma turma. */
@@ -83,6 +111,8 @@ export interface Disciplina {
   turma: string;
   nome: string;
   ano: Ano;
+  /** Sem valor = profissional (dados antigos). */
+  ensino?: Ensino;
   componente: Componente;
   cor: string;
   /** Tempos por dia da semana, índice 0 = segunda ... 6 = domingo. */
@@ -105,4 +135,18 @@ export interface Estado {
   disciplinas: Disciplina[];
   periodosTurma: PeriodoTurma[];
   catalogo: EntradaCatalogo[];
+}
+
+export function ensinoDe(d: { ensino?: Ensino }): Ensino {
+  return d.ensino ?? 'profissional';
+}
+
+/** Ensino geral (básico ou secundário): disciplina anual, sem módulos. */
+export function ehGeral(d: { ensino?: Ensino }): boolean {
+  return ensinoDe(d) !== 'profissional';
+}
+
+/** Fim das aulas de um ano; se o calendário não o tiver, o mais tardio dos que tem. */
+export function fimDoAno(cal: { fimPorAno: Partial<Record<Ano, ISODate>> }, ano: Ano): ISODate {
+  return cal.fimPorAno[ano] ?? Object.values(cal.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!;
 }
