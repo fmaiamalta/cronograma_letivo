@@ -17,18 +17,18 @@ function larguraRotulo(): number {
   return typeof window !== 'undefined' && window.innerWidth < 760 ? 150 : 220;
 }
 
-function primeiroDoMes(iso: ISODate): ISODate {
+export function primeiroDoMes(iso: ISODate): ISODate {
   return iso.slice(0, 8) + '01';
 }
 
-function fimDoMes(iso: ISODate): ISODate {
+export function fimDoMes(iso: ISODate): ISODate {
   const [y, m] = iso.split('-').map(Number);
   const prox = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
   return addDays(prox, -1);
 }
 
 /** Separa as aulas de um módulo em troços, partidos por interrupções e períodos sem aulas. */
-function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate }[]): [ISODate, ISODate][] {
+export function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate }[]): [ISODate, ISODate][] {
   const out: [ISODate, ISODate][] = [];
   const s = pm.sessoes;
   if (!s.length) return out;

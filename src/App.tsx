@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarioView } from './components/CalendarioView';
 import { CatalogoView } from './components/CatalogoView';
 import { Gantt } from './components/Gantt';
+import { GanttCompacto } from './components/GanttCompacto';
 import { HorarioView } from './components/HorarioView';
 import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './components/icons';
 import { HorarioLeitura } from './components/HorarioLeitura';
@@ -68,6 +69,8 @@ export default function App() {
     estado.disciplinas.length || (typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches) ? 'cronograma' : 'horario',
   );
   const [pxDia, setPxDia] = useState<number>(() => lerPreferencia('cronograma.zoom', 3));
+  // Telemóvel: 1 = ano inteiro no ecrã.
+  const [zoomTel, setZoomTel] = useState<number>(() => lerPreferencia('cronograma.zoomTel', 1));
   const [filtroTurma, setFiltroTurma] = useState<string>('');
   const [aberto, setAberto] = useState<{ d: string; m: string } | null>(null);
   const [editar, setEditar] = useState<string | null>(null);
@@ -82,6 +85,7 @@ export default function App() {
   }, []);
 
   useEffect(() => gravarPreferencia('cronograma.zoom', pxDia), [pxDia]);
+  useEffect(() => gravarPreferencia('cronograma.zoomTel', zoomTel), [zoomTel]);
 
   const planos = useMemo(
     () => estado.disciplinas.map((d) => planear(d, estado.calendario, estado.periodosTurma, hoje)),
@@ -305,7 +309,20 @@ export default function App() {
 
       <main>
         {atual === 'cronograma' && (
-          <div className="page wide">
+          <div className={'page wide' + (telemovel ? ' gc-page' : '')}>
+            {telemovel && planos.length > 0 && (
+              <div className="gc-controls">
+                <select value={filtroTurma} onChange={(e) => setFiltroTurma(e.target.value)} aria-label="Filtrar por turma">
+                  <option value="">Todas as turmas</option>
+                  {turmas.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <div className="zoom" role="group" aria-label="Zoom">
+                  <button className="icon-btn" onClick={() => setZoomTel((z) => Math.max(1, z / 2))} disabled={zoomTel <= 1} aria-label="Afastar">−</button>
+                  <button className="icon-btn" onClick={() => setZoomTel((z) => Math.min(8, z * 2))} disabled={zoomTel >= 8} aria-label="Aproximar">+</button>
+                  <button className="icon-btn" onClick={() => setZoomTel(1)} disabled={zoomTel === 1} aria-label="Ano inteiro">↔</button>
+                </div>
+              </div>
+            )}
             <div className="page-head">
               <div>
                 <h1>Cronograma {estado.calendario.anoLetivo}</h1>
@@ -346,7 +363,16 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <Gantt
+              telemovel ? (
+                <GanttCompacto
+                  calendario={estado.calendario}
+                  planos={visiveis}
+                  periodosTurma={estado.periodosTurma}
+                  hoje={hoje}
+                  zoom={zoomTel}
+                  onAbrir={(d, m) => setAberto({ d, m })}
+                />
+              ) : <Gantt
                 calendario={estado.calendario}
                 planos={visiveis}
                 periodosTurma={estado.periodosTurma}

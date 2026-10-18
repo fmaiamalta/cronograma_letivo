@@ -59,7 +59,8 @@ h3 { font-size: 0.95rem; margin: 18px 0 6px; }
 .warn { color: var(--warn); }
 .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.85rem; }
 
-.app { min-height: 100vh; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+.app { min-height: 100vh; }
+@media (max-width: 760px) { .app { padding-bottom: calc(72px + env(safe-area-inset-bottom)); } }
 
 /* Barra de topo */
 .topbar {
@@ -476,3 +477,57 @@ textarea.codigo {
 .gantt-task-range::after { right: 0; }
 .gantt-task-range.done { background: var(--ok); }
 .gantt-task-range.late { background: var(--today); }
+
+/* ---- Telemóvel: ecrã inteiro, cronograma compacto ---- */
+.app.telemovel { height: 100vh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.telemovel main { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.telemovel .gc-page { height: 100%; display: flex; flex-direction: column; padding: 8px 8px 6px; gap: 6px; }
+.telemovel .gc-page > .page-head { display: none; }
+@media (max-height: 500px) {
+  .telemovel .topbar { padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: 4px; }
+  .telemovel .brand small { display: none; }
+  .telemovel .brand-mark { width: 24px; height: 24px; }
+  .telemovel .tabs button { padding: 5px 10px; }
+}
+.gc-controls { display: flex; gap: 8px; align-items: center; }
+.gc-controls select { flex: 1; min-width: 0; min-height: 34px; padding: 4px 8px; }
+.gc-controls .icon-btn { width: 36px; height: 34px; }
+
+.gc {
+  flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.gc-inner { position: relative; min-width: 100%; }
+.gc-head { position: sticky; top: 0; z-index: 6; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.gc-month {
+  position: absolute; top: 4px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em; color: var(--muted);
+  text-align: center; border-left: 1px solid var(--grid); overflow: hidden; white-space: nowrap;
+}
+.gc-break-date {
+  position: absolute; font-size: 0.6rem; font-weight: 600; line-height: 1; padding: 2px 3px; border-radius: 3px;
+  color: var(--break-text); background: var(--surface-2); white-space: nowrap;
+}
+.gc-break-date.l0 { top: 20px; }
+.gc-break-date.l1 { top: 35px; }
+.gc-hoje {
+  position: absolute; bottom: -1px; transform: translateX(-50%); z-index: 2; font-size: 0.58rem; font-weight: 700; line-height: 1;
+  padding: 2px 4px; border-radius: 999px; color: #fff; background: var(--today); white-space: nowrap;
+}
+.gc-body { position: relative; }
+.gc-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.gc-group { height: 20px; display: flex; align-items: center; background: var(--surface-2); border-left: 4px solid var(--cor); }
+.gc-sticky {
+  position: sticky; left: 0; z-index: 3; display: inline-block; max-width: 92vw; padding: 0 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gc-group .gc-sticky { font-size: 0.72rem; font-weight: 700; background: var(--surface-2); border-radius: 3px; }
+.gc-row { position: relative; height: 32px; border-bottom: 1px solid var(--grid); cursor: pointer; }
+.gc-mod { margin-top: 2px; font-size: 0.68rem; color: var(--text); background: var(--surface); border-radius: 3px; }
+.gc-mod b { color: var(--muted); font-weight: 600; }
+.gc-bar { position: absolute; bottom: 5px; height: 9px; z-index: 2; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--cor) 40%, transparent); }
+.gc-task { position: absolute; bottom: 4px; width: 8px; height: 8px; z-index: 4; transform: translateX(-50%) rotate(45deg); border: 2px solid var(--cor); background: var(--surface); }
+.gc-task.done { background: var(--ok); border-color: var(--ok); }
+.gc-task.late { border-color: var(--today); }
+.gc-task-range { position: absolute; bottom: 16px; height: 3px; z-index: 4; border-radius: 2px; background: var(--cor); }
+.gc-task-range.done { background: var(--ok); }
+.gc-task-range.late { background: var(--today); }
