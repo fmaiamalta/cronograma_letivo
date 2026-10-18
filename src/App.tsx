@@ -171,7 +171,11 @@ export default function App() {
     history.replaceState(null, '', location.pathname + location.search);
   };
 
-  // ---- Sincronização automática (computador → telemóvel) ----
+  // ---- Conta (e-mail): os mesmos dados em todos os aparelhos ----
+  const conta = useNuvem(estado, setEstado);
+
+  // ---- Sincronização automática antiga por Gist (computador → telemóvel) ----
+  // Fica parada quando há conta, para haver uma só fonte de dados.
   const [sync, setSyncState] = useState<ConfigSync>(() => {
     // Link "#sync=..." aberto diretamente (Android): fica ligado a esse Gist.
     const g = gistDoTexto(location.hash);
@@ -208,13 +212,13 @@ export default function App() {
 
   // Computador: envia 3 s depois da última alteração.
   useEffect(() => {
-    if (!sync.token || !sync.gistId) return;
+    if (!sync.token || !sync.gistId || conta.email) return;
     const t = setTimeout(async () => {
       if ((await codificar(estadoRef.current)) === ultimoEnviado.current) return;
       enviarAgora().catch(() => undefined);
     }, 3000);
     return () => clearTimeout(t);
-  }, [estado, sync.token, sync.gistId, enviarAgora]);
+  }, [estado, sync.token, sync.gistId, conta.email, enviarAgora]);
 
   // Telemóvel: vai buscar ao abrir, ao voltar à app e de 5 em 5 minutos.
   const puxar = useCallback(async () => {
@@ -236,7 +240,7 @@ export default function App() {
   }, [atualizar, setSync]);
 
   useEffect(() => {
-    if (sync.token || !sync.gistId) return;
+    if (sync.token || !sync.gistId || conta.email) return;
     puxar();
     const aoVoltar = () => document.visibilityState === 'visible' && puxar();
     document.addEventListener('visibilitychange', aoVoltar);
@@ -245,10 +249,8 @@ export default function App() {
       document.removeEventListener('visibilitychange', aoVoltar);
       clearInterval(t);
     };
-  }, [sync.token, sync.gistId, puxar]);
+  }, [sync.token, sync.gistId, conta.email, puxar]);
 
-  // ---- Conta (e-mail): os mesmos dados em todos os aparelhos ----
-  const conta = useNuvem(estado, setEstado);
   // A sincronização por Gist só aparece a quem já a tinha ligado.
   const gistLigado = !!(sync.token || sync.gistId);
 
