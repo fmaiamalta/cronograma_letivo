@@ -46,6 +46,10 @@ export interface EntradaCatalogo {
   componente: Componente;
   qualificacao?: string;
   opcional?: boolean;
+  /** Módulo sem código, criado à mão no horário (ex.: "Base 1 · Pesquisar..."). */
+  modulo?: boolean;
+  /** Criado à mão no horário (não veio de um referencial): pode ser atualizado. */
+  manual?: boolean;
 }
 
 export interface Tarefa {

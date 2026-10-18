@@ -399,3 +399,39 @@ tr:last-child td { border-bottom: 0; }
 .uc-horas { flex: 0 0 auto; font-size: 0.8rem; line-height: 1.65; color: var(--muted); white-space: nowrap; }
 .uc-vazio { padding: 8px; }
 .picker-tec-foot { position: sticky; bottom: -8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 4px; background: var(--surface); border-top: 1px solid var(--border); }
+
+/* Telemóvel: só consulta, sem textos de ajuda */
+.telemovel .ajuda, .telemovel .page-head p { display: none !important; }
+.telemovel .page { padding-top: 12px; }
+.telemovel .page-head { margin-bottom: 10px; }
+.telemovel h1 { font-size: 1.2rem; }
+
+/* Janelas de enviar/receber */
+.sheet-backdrop.center { align-items: center; justify-content: center; padding: 16px; }
+.dialog {
+  width: min(520px, 100%); background: var(--surface); border-radius: 14px; padding: 18px;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+}
+.dialog h2 { margin: 0; }
+.dialog .row.end { margin-top: 4px; }
+.passos { margin: 0; padding-left: 20px; font-size: 0.9rem; }
+.passos li { margin: 2px 0; }
+textarea.codigo {
+  width: 100%; resize: vertical; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface-2); color: var(--text); font: 0.78rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace; word-break: break-all;
+}
+
+/* Horário só de leitura */
+.card.leitura header { display: flex; flex-direction: column; padding: 12px 14px 6px; border-left: 5px solid var(--cor); }
+.card.leitura header small { color: var(--muted); }
+.card.leitura ul { list-style: none; margin: 0; padding: 0 0 6px; }
+.card.leitura li button {
+  display: block; width: 100%; padding: 8px 14px; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.card.leitura li + li button { border-top: 1px solid var(--grid); }
+.leitura-linha { display: flex; justify-content: space-between; gap: 10px; text-align: left; }
+.leitura-nome { flex: 1; min-width: 0; font-size: 0.92rem; }
+.leitura-linha small { color: var(--muted); white-space: nowrap; }
+.card.leitura .mod-progress { margin-top: 6px; }
+.card.leitura .mono { color: var(--muted); font-size: 0.78rem; }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DISCIPLINAS_ESCOLA } from '../data/disciplinas';
+import { codigoVisivel, ehDisciplina, ehUC } from '../lib/catalog';
 import { COMPONENTES, type Componente, type EntradaCatalogo } from '../lib/types';
 
 export interface Escolha {
@@ -24,7 +25,7 @@ interface Opcao {
 function opcoes(componente: Componente, catalogo: EntradaCatalogo[]): Opcao[] {
   return [
     ...catalogo
-      .filter((c) => !c.codigo.startsWith('UC') && c.componente === componente)
+      .filter((c) => ehDisciplina(c) && c.componente === componente)
       .map((c) => ({ nome: c.nome, detalhe: c.horas ? `${c.horas} h` : undefined })),
     ...DISCIPLINAS_ESCOLA.filter((d) => d.componente === componente).map((d) => ({ nome: d.nome })),
   ];
@@ -40,8 +41,9 @@ function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; c
   const [procura, setProcura] = useState('');
   const [marcadas, setMarcadas] = useState<EntradaCatalogo[]>([]);
   const ucs = catalogo
-    .filter((c) => c.codigo.startsWith('UC') && c.componente === 'tecnologica')
-    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+    .filter((c) => ehUC(c) && c.componente === 'tecnologica')
+    // UC por código; módulos sem código no fim, por nome.
+    .sort((a, b) => (a.modulo ? 1 : 0) - (b.modulo ? 1 : 0) || (a.modulo ? a.nome.localeCompare(b.nome) : a.codigo.localeCompare(b.codigo)));
   const termo = semAcentos(procura.trim());
   const visiveis = termo
     ? ucs.filter((c) => semAcentos(c.codigo).includes(termo.replace(/^uc/, '')) || semAcentos(c.nome).includes(termo))
@@ -62,7 +64,7 @@ function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; c
                 {/* O Safari não aplica flex/grid ao próprio <button>: o alinhamento vive neste span. */}
                 <span className="uc-line">
                   <span className="uc-ordem">{ordem >= 0 ? ordem + 1 : ''}</span>
-                  <span className="uc-cod">{c.codigo}</span>
+                  <span className="uc-cod">{codigoVisivel(c)}</span>
                   <span className="uc-nome">
                     {c.nome}
                     {c.opcional && <span className="tag">opcional</span>}
@@ -76,7 +78,7 @@ function Tecnologica({ nomeAtual, catalogo, onEscolher }: { nomeAtual: string; c
         {!visiveis.length && <li className="muted small uc-vazio">Sem resultados.</li>}
       </ul>
       <div className="picker-tec-foot">
-        <span className="muted small">{marcadas.length ? marcadas.map((m) => m.codigo).join(', ') : 'Nenhuma UC escolhida'}</span>
+        <span className="muted small">{marcadas.length ? marcadas.map((m) => codigoVisivel(m) || m.nome).join(', ') : 'Nenhuma UC escolhida'}</span>
         <button className="btn primary" type="submit" disabled={!nome.trim()}>OK</button>
       </div>
     </form>

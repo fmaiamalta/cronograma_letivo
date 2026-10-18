@@ -11,9 +11,11 @@ interface Props {
   onMudar: (f: (m: Modulo) => Modulo) => void;
   onFechar: () => void;
   onEditar: () => void;
+  /** Telemóvel: só consulta e marcar tarefas como feitas. */
+  soLeitura?: boolean;
 }
 
-export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar }: Props) {
+export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar, soLeitura }: Props) {
   const m = pm.modulo;
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState(pm.inicio && pm.inicio > hoje ? pm.inicio : todayISO());
@@ -68,16 +70,18 @@ export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar }: Pr
                 <input type="checkbox" checked={t.feita} onChange={() => mudarTarefa(t.id, (x) => ({ ...x, feita: !x.feita }))} />
                 <span>{t.titulo}</span>
               </label>
+              {soLeitura ? <small className="muted">{t.data ? fmtLong(t.data) : ''}</small> : <>
               <input type="date" value={t.data ?? ''} onChange={(e) => mudarTarefa(t.id, (x) => ({ ...x, data: e.target.value || undefined }))} aria-label="Data da tarefa" />
               <button className="icon-btn" onClick={() => mudarTarefa(t.id, () => null)} aria-label={`Apagar ${t.titulo}`}><IconTrash /></button>
+              </>}
             </li>
           ))}
         </ul>
-        <form className="task-add" onSubmit={adicionar}>
+        {!soLeitura && <form className="task-add" onSubmit={adicionar}>
           <input placeholder="Nova tarefa" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
           <input type="date" value={data} onChange={(e) => setData(e.target.value)} aria-label="Data" />
           <button className="btn primary" type="submit">Adicionar</button>
-        </form>
+        </form>}
 
         <button className="link-btn" onClick={() => setVerAulas((v) => !v)}>
           {verAulas ? 'Esconder' : 'Ver'} as {pm.sessoes.length} aulas
@@ -92,9 +96,11 @@ export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar }: Pr
           </ol>
         )}
 
-        <footer className="sheet-foot">
-          <button className="btn" onClick={onEditar}>Editar disciplina</button>
-        </footer>
+        {!soLeitura && (
+          <footer className="sheet-foot">
+            <button className="btn" onClick={onEditar}>Editar disciplina</button>
+          </footer>
+        )}
       </div>
     </div>
   );

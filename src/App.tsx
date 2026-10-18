@@ -4,12 +4,15 @@ import { CatalogoView } from './components/CatalogoView';
 import { Gantt } from './components/Gantt';
 import { HorarioView } from './components/HorarioView';
 import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './components/icons';
+import { HorarioLeitura } from './components/HorarioLeitura';
 import { ModuloPanel } from './components/ModuloPanel';
+import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
 import { TarefasView } from './components/TarefasView';
 import { todayISO } from './lib/dates';
 import { planear } from './lib/engine';
 import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
+import { aplicarPacote } from './lib/transfer';
 import type { CalendarioEscolar, Modulo } from './lib/types';
 
 type Separador = 'cronograma' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
@@ -39,9 +42,28 @@ function gravarPreferencia(chave: string, v: unknown) {
   }
 }
 
+// Telemóvel (ao alto ou deitado): só consulta. Tablets e computadores editam.
+const CONSULTA = '(max-width: 760px), (pointer: coarse) and (max-height: 500px)';
+
+function useTelemovel(): boolean {
+  const [v, setV] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches);
+  useEffect(() => {
+    const m = matchMedia(CONSULTA);
+    const f = () => setV(m.matches);
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, []);
+  return v;
+}
+
 export default function App() {
+  const telemovel = useTelemovel();
+  const [transfer, setTransfer] = useState<'enviar' | 'receber' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
+  const [dadosLink] = useState(() => (location.hash.includes('dados=') ? location.hash : ''));
   const { estado, atualizar, setEstado, gravado } = useEstado();
-  const [sep, setSep] = useState<Separador>(() => (estado.disciplinas.length ? 'cronograma' : 'horario'));
+  const [sep, setSep] = useState<Separador>(() =>
+    estado.disciplinas.length || (typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches) ? 'cronograma' : 'horario',
+  );
   const [pxDia, setPxDia] = useState<number>(() => lerPreferencia('cronograma.zoom', 3));
   const [filtroTurma, setFiltroTurma] = useState<string>('');
   const [aberto, setAberto] = useState<{ d: string; m: string } | null>(null);
@@ -106,11 +128,22 @@ export default function App() {
     history.replaceState(null, '', location.pathname + location.search);
   };
 
+  const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'horario' || x.id === 'tarefas') : SEPARADORES;
+  // No telemóvel não há Calendário nem Catálogo: mostra o cronograma.
+  const atual: Separador = telemovel && (sep === 'calendario' || sep === 'catalogo') ? 'cronograma' : sep;
+
+  const fecharTransfer = () => {
+    setTransfer(null);
+    if (location.hash.includes('dados=')) history.replaceState(null, '', location.pathname + location.search);
+  };
+
+  const fecharMenu = (e: React.MouseEvent) => (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open');
+
   const planoAberto = aberto && planos.find((p) => p.disciplina.id === aberto.d);
   const pmAberto = planoAberto && planoAberto.modulos.find((m) => m.modulo.id === aberto!.m);
 
   return (
-    <div className="app">
+    <div className={'app' + (telemovel ? ' telemovel' : '')}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden />
@@ -120,21 +153,26 @@ export default function App() {
           </div>
         </div>
         <nav className="tabs" aria-label="Secções">
-          {SEPARADORES.map(({ id, nome, Icone }) => (
-            <button key={id} className={sep === id ? 'active' : ''} onClick={() => setSep(id)} aria-current={sep === id ? 'page' : undefined}>
+          {separadores.map(({ id, nome, Icone }) => (
+            <button key={id} className={atual === id ? 'active' : ''} onClick={() => setSep(id)} aria-current={atual === id ? 'page' : undefined}>
               <Icone /> <span>{nome}</span>
             </button>
           ))}
         </nav>
         <details className="menu">
           <summary aria-label="Mais opções">⋯</summary>
-          <div className="menu-pop">
+          <div className="menu-pop" onClick={fecharMenu}>
+            {telemovel ? (
+              <button onClick={() => setTransfer('receber')}>Receber do computador</button>
+            ) : (
+              <button onClick={() => setTransfer('enviar')}>Enviar para o telemóvel</button>
+            )}
             <button onClick={exportar}>Exportar cópia (.json)</button>
             <label>
               Importar cópia
               <input type="file" hidden accept=".json,application/json" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) importarCopia(f); }} />
             </label>
-            <button onClick={() => { setSep('cronograma'); setTimeout(() => window.print(), 100); }}>Imprimir ou guardar PDF</button>
+            {!telemovel && <button onClick={() => { setSep('cronograma'); setTimeout(() => window.print(), 100); }}>Imprimir ou guardar PDF</button>}
           </div>
         </details>
       </header>
@@ -152,12 +190,12 @@ export default function App() {
       )}
 
       <main>
-        {sep === 'cronograma' && (
+        {atual === 'cronograma' && (
           <div className="page wide">
             <div className="page-head">
               <div>
                 <h1>Cronograma {estado.calendario.anoLetivo}</h1>
-                <p className="muted print-hide">Interrupções a cinzento. Linha vermelha: hoje.</p>
+                <p className="muted print-hide ajuda">Interrupções a cinzento. Linha vermelha: hoje.</p>
               </div>
               {planos.length > 0 && (
                 <div className="row wrap print-hide">
@@ -173,13 +211,20 @@ export default function App() {
               )}
             </div>
             {!estado.calendario.importadoDe && planos.length > 0 && (
-              <div className="banner print-hide" style={{ margin: '0 0 12px' }}>
+              <div className="banner print-hide ajuda" style={{ margin: '0 0 12px' }}>
                 <span>Calendário nacional em uso. Falta importar o calendário da escola.</span>
                 <button className="btn" onClick={() => setSep('calendario')}>Importar calendário</button>
               </div>
             )}
             {planos.length === 0 ? (
-              <div className="empty">
+              telemovel ? (
+                <div className="empty">
+                  <p>Sem dados.</p>
+                  <div className="row">
+                    <button className="btn primary" onClick={() => setTransfer('receber')}>Receber do computador</button>
+                  </div>
+                </div>
+              ) : <div className="empty">
                 <p>Sem disciplinas no horário.</p>
                 <div className="row">
                   <button className="btn primary" onClick={() => setSep('horario')}>Preencher o horário</button>
@@ -196,18 +241,22 @@ export default function App() {
                 onAbrir={(d, m) => setAberto({ d, m })}
               />
             )}
-            <p className="legend">
+            <p className="legend ajuda">
               {estado.calendario.interrupcoes.map((i) => `${i.nome} ${i.inicio.slice(8, 10)}/${i.inicio.slice(5, 7)}–${i.fim.slice(8, 10)}/${i.fim.slice(5, 7)}`).join(' | ')}
               . Linhas finas: feriados.
             </p>
           </div>
         )}
-        {sep === 'horario' && (
-          <HorarioView estado={estado} planos={planos} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
+        {atual === 'horario' && (
+          telemovel ? (
+            <HorarioLeitura planos={planos} onAbrir={(d, m) => setAberto({ d, m })} />
+          ) : (
+            <HorarioView estado={estado} planos={planos} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
+          )
         )}
-        {sep === 'calendario' && <CalendarioView estado={estado} atualizar={atualizar} />}
-        {sep === 'catalogo' && <CatalogoView estado={estado} atualizar={atualizar} />}
-        {sep === 'tarefas' && <TarefasView estado={estado} hoje={hoje} onAlternar={alternarTarefa} onAbrir={(d, m) => setAberto({ d, m })} />}
+        {atual === 'calendario' && <CalendarioView estado={estado} atualizar={atualizar} />}
+        {atual === 'catalogo' && <CatalogoView estado={estado} atualizar={atualizar} />}
+        {atual === 'tarefas' && <TarefasView estado={estado} hoje={hoje} onAlternar={alternarTarefa} onAbrir={(d, m) => setAberto({ d, m })} />}
       </main>
 
       {planoAberto && pmAberto && (
@@ -219,6 +268,20 @@ export default function App() {
           onMudar={(f) => mudarModulo(aberto!.d, aberto!.m, f)}
           onFechar={() => setAberto(null)}
           onEditar={() => { setEditar(aberto!.d); setAberto(null); setSep('horario'); }}
+          soLeitura={telemovel}
+        />
+      )}
+
+      {transfer === 'enviar' && <EnviarDialog estado={estado} onFechar={fecharTransfer} />}
+      {transfer === 'receber' && (
+        <ReceberDialog
+          inicial={dadosLink}
+          onFechar={fecharTransfer}
+          onAplicar={(p) => {
+            atualizar((e) => aplicarPacote(e, p));
+            fecharTransfer();
+            setSep('cronograma');
+          }}
         />
       )}
     </div>

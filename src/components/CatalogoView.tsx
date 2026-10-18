@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { juntarCatalogo, lerCatalogoCSV, lerReferencial, normalizarCodigo, pesquisarCatalogo } from '../lib/catalog';
+import { codigoVisivel, juntarCatalogo, lerCatalogoCSV, lerReferencial, normalizarCodigo, pesquisarCatalogo } from '../lib/catalog';
 import { horasParaTempos } from '../lib/engine';
 import { lerFicheiro } from '../lib/fileText';
 import { CATALOGO_BASE } from '../lib/presets';
@@ -105,7 +105,7 @@ export function CatalogoView({ estado, atualizar }: Props) {
           <tbody>
             {lista.map((e) => (
               <tr key={e.codigo}>
-                <td className="mono">{e.codigo}</td>
+                <td className="mono">{codigoVisivel(e)}</td>
                 <td>{e.nome}{e.opcional && <span className="tag">opcional</span>}</td>
                 <td>{e.horas}</td>
                 <td>{horasParaTempos(e.horas, mpt)}</td>

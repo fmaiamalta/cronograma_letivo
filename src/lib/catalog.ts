@@ -32,6 +32,51 @@ export function pesquisarCatalogo(catalogo: EntradaCatalogo[], termo: string, ma
     .slice(0, max);
 }
 
+/** UC do referencial ou módulo criado à mão: o que pode entrar como módulo de uma disciplina. */
+export function ehUC(e: EntradaCatalogo): boolean {
+  return e.codigo.startsWith('UC') || !!e.modulo;
+}
+
+/** Disciplina do referencial (Português, Matemática, ...). */
+export function ehDisciplina(e: EntradaCatalogo): boolean {
+  return !ehUC(e);
+}
+
+/** Código mostrado ao utilizador: os módulos criados à mão não têm código. */
+export function codigoVisivel(e: EntradaCatalogo): string {
+  return e.modulo ? '' : e.codigo;
+}
+
+/**
+ * Entrada de catálogo para um módulo escrito à mão no horário, ou null se não
+ * há nada a gravar: módulo incompleto, ou já existe igual (mesmo código ou, sem
+ * código, mesmo nome). Uma entrada criada à mão é atualizada (ex.: duração).
+ */
+export function entradaParaModulo(
+  catalogo: EntradaCatalogo[],
+  m: { codigo?: string; nome: string; quantidade: number; unidade: 'h' | 't' },
+  componente: Componente,
+  minutosPorTempo: number,
+): EntradaCatalogo | null {
+  const nome = m.nome.trim();
+  if (!nome || !(m.quantidade > 0)) return null;
+  const horas = m.unidade === 'h' ? m.quantidade : Math.round(((m.quantidade * minutosPorTempo) / 60) * 100) / 100;
+  if (m.codigo?.trim()) {
+    const codigo = normalizarCodigo(m.codigo);
+    const nova: EntradaCatalogo = { codigo, nome, horas, componente, manual: true };
+    const atual = catalogo.find((e) => e.codigo === codigo);
+    return atual && (!atual.manual || igual(atual, nova)) ? null : nova;
+  }
+  const chave = semAcentos(nome);
+  const nova: EntradaCatalogo = { codigo: `MOD:${chave}`, nome, horas, componente, modulo: true, manual: true };
+  const atual = catalogo.find((e) => semAcentos(e.nome) === chave);
+  return atual && (!atual.manual || igual(atual, nova)) ? null : { ...nova, codigo: atual?.codigo ?? nova.codigo };
+}
+
+function igual(a: EntradaCatalogo, b: EntradaCatalogo): boolean {
+  return a.nome === b.nome && a.horas === b.horas && a.componente === b.componente;
+}
+
 /** Junta entradas novas ao catálogo; as novas substituem as que têm o mesmo código. */
 export function juntarCatalogo(atual: EntradaCatalogo[], novas: EntradaCatalogo[]): EntradaCatalogo[] {
   const mapa = new Map(atual.map((e) => [e.codigo, e]));

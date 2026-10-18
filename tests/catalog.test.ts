@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { juntarCatalogo, lerCatalogoCSV, lerReferencial, normalizarCodigo, pesquisarCatalogo, pontosParaHoras, procurarCodigo } from '../src/lib/catalog';
+import { entradaParaModulo, juntarCatalogo, lerCatalogoCSV, lerReferencial, normalizarCodigo, pesquisarCatalogo, pontosParaHoras, procurarCodigo } from '../src/lib/catalog';
 import { CATALOGO_BASE } from '../src/lib/presets';
 
 describe('códigos', () => {
@@ -58,5 +58,30 @@ describe('CSV', () => {
     const j = juntarCatalogo([{ codigo: 'UC1', nome: 'a', horas: 1, componente: 'tecnologica' }], [{ codigo: 'UC1', nome: 'b', horas: 2, componente: 'tecnologica' }]);
     expect(j).toHaveLength(1);
     expect(j[0].nome).toBe('b');
+  });
+});
+
+describe('módulos escritos à mão entram no catálogo', () => {
+  const base = [{ codigo: 'UC02640', nome: 'Gerir um projeto multimédia', horas: 25, componente: 'tecnologica' as const }];
+  it('UC nova com código', () => {
+    expect(entradaParaModulo(base, { codigo: '2700', nome: 'Nova UC', quantidade: 25, unidade: 'h' }, 'tecnologica', 50)).toEqual({
+      codigo: 'UC02700', nome: 'Nova UC', horas: 25, componente: 'tecnologica', manual: true,
+    });
+  });
+  it('módulo sem código, em tempos', () => {
+    expect(entradaParaModulo(base, { nome: 'Base 1 · Pesquisar', quantidade: 60, unidade: 't' }, 'sociocultural', 50)).toEqual({
+      codigo: 'MOD:base 1 · pesquisar', nome: 'Base 1 · Pesquisar', horas: 50, componente: 'sociocultural', modulo: true, manual: true,
+    });
+  });
+  it('atualiza a duração de um módulo criado à mão', () => {
+    const cat = [{ codigo: 'MOD:base 3', nome: 'Base 3', horas: 25, componente: 'sociocultural' as const, modulo: true, manual: true }];
+    expect(entradaParaModulo(cat, { nome: 'Base 3', quantidade: 40, unidade: 'h' }, 'sociocultural', 50)?.horas).toBe(40);
+    expect(entradaParaModulo(cat, { nome: 'Base 3', quantidade: 25, unidade: 'h' }, 'sociocultural', 50)).toBeNull();
+  });
+  it('não repete o que já existe nem guarda módulos incompletos', () => {
+    expect(entradaParaModulo(base, { codigo: 'UC02640', nome: 'x', quantidade: 25, unidade: 'h' }, 'tecnologica', 50)).toBeNull();
+    expect(entradaParaModulo(base, { nome: 'Gerir um projeto multimedia', quantidade: 25, unidade: 'h' }, 'tecnologica', 50)).toBeNull();
+    expect(entradaParaModulo(base, { nome: '', quantidade: 25, unidade: 'h' }, 'tecnologica', 50)).toBeNull();
+    expect(entradaParaModulo(base, { nome: 'Algo', quantidade: 0, unidade: 'h' }, 'tecnologica', 50)).toBeNull();
   });
 });

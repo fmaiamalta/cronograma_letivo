@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
-import { normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
+import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
 import { temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
-import { type Ano, type Disciplina, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { type Ano, type Disciplina, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
@@ -101,6 +101,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
             </header>
             {aberto && (
               <EditorDisciplina
+                atualizar={atualizar}
                 d={d}
                 estado={estado}
                 plano={plano}
@@ -117,7 +118,8 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
   );
 }
 
-function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
+function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
+  atualizar: Props['atualizar'];
   d: Disciplina;
   estado: Estado;
   plano?: PlanoDisciplina;
@@ -141,18 +143,32 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
       return { ...x, modulos: l };
     });
 
-  const addModulo = (codigo = '') => {
-    const e = codigo ? procurarCodigo(estado.catalogo, codigo) : undefined;
-    const m: Modulo = { id: uid(), codigo: e?.codigo, nome: e?.nome ?? '', quantidade: e?.horas ?? 25, unidade: 'h', tarefas: [] };
+  const addModulo = (e?: EntradaCatalogo) => {
+    const m: Modulo = { id: uid(), codigo: e && !e.modulo ? e.codigo : undefined, nome: e?.nome ?? '', quantidade: e?.horas ?? 25, unidade: 'h', tarefas: [] };
     mudar((x) => ({ ...x, modulos: [...x.modulos, m] }));
   };
+
+  /**
+   * Um módulo escrito à mão passa a fazer parte do catálogo, para se poder
+   * escolher noutra disciplina. Uma entrada com código substitui a que o mesmo
+   * módulo tinha sem código.
+   */
+  const registar = (m: Pick<Modulo, 'codigo' | 'nome' | 'quantidade' | 'unidade'>) =>
+    atualizar((e) => {
+      const nova = entradaParaModulo(e.catalogo, m, d.componente, e.calendario.minutosPorTempo);
+      if (!nova) return e;
+      const resto = nova.modulo ? e.catalogo : e.catalogo.filter((c) => !(c.modulo && c.nome.trim() === nova.nome));
+      return { ...e, catalogo: juntarCatalogo(resto, [nova]) };
+    });
 
   /** Ao escrever o código, preenche nome e horas a partir do catálogo. */
   const mudarCodigo = (m: Modulo, valor: string) => {
     const e = procurarCodigo(estado.catalogo, valor);
-    mudarModulo(m.id, (x) =>
-      e ? { ...x, codigo: e.codigo, nome: e.nome, quantidade: e.horas, unidade: 'h' } : { ...x, codigo: valor.toUpperCase() || undefined },
-    );
+    const novo: Modulo = e
+      ? { ...m, codigo: e.codigo, nome: e.nome, quantidade: e.horas, unidade: 'h' }
+      : { ...m, codigo: valor.trim() ? normalizarCodigo(valor) : undefined };
+    mudarModulo(m.id, () => novo);
+    if (!e) registar(novo);
   };
 
   const escolherDisciplina = (e: Escolha) =>
@@ -164,12 +180,12 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
       modulos: [
         ...x.modulos,
         ...(e.ucs ?? [])
-          .filter((uc) => !x.modulos.some((m) => m.codigo === uc.codigo))
-          .map((uc) => ({ id: uid(), codigo: uc.codigo, nome: uc.nome, quantidade: uc.horas, unidade: 'h' as const, tarefas: [] })),
+          .filter((uc) => !x.modulos.some((m) => (uc.modulo ? !m.codigo && m.nome === uc.nome : m.codigo === uc.codigo)))
+          .map((uc) => ({ id: uid(), codigo: uc.modulo ? undefined : uc.codigo, nome: uc.nome, quantidade: uc.horas, unidade: 'h' as const, tarefas: [] })),
       ],
     }));
 
-  const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter((c) => c.codigo.startsWith('UC')), procura, 8) : [];
+  const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter(ehUC), procura, 8) : [];
 
   return (
     <div className="card-body">
@@ -236,7 +252,6 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
         <legend>UC e módulos, por ordem</legend>
         <div className="mod-list">
           {d.modulos.map((m, i) => {
-            const conhecido = m.codigo ? procurarCodigo(estado.catalogo, m.codigo) : undefined;
             const pm = plano?.modulos.find((x) => x.modulo.id === m.id);
             return (
               <div key={m.id} className="mod-edit">
@@ -245,8 +260,8 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
                   onBlur={(e) => e.target.value !== (m.codigo ?? '') && mudarCodigo(m, e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                   aria-label="Código da UC" />
-                <input className="mod-nome" placeholder="Nome do módulo" value={m.nome} onChange={(e) => mudarModulo(m.id, (x) => ({ ...x, nome: e.target.value }))} aria-label="Nome" />
-                <input className="mod-qt" type="number" min={1} value={m.quantidade || ''} onChange={(e) => mudarModulo(m.id, (x) => ({ ...x, quantidade: Number(e.target.value) }))} aria-label="Duração" />
+                <input className="mod-nome" placeholder="Nome do módulo" value={m.nome} onChange={(e) => mudarModulo(m.id, (x) => ({ ...x, nome: e.target.value }))} onBlur={() => registar(m)} aria-label="Nome" />
+                <input className="mod-qt" type="number" min={1} value={m.quantidade || ''} onChange={(e) => mudarModulo(m.id, (x) => ({ ...x, quantidade: Number(e.target.value) }))} onBlur={() => registar(m)} aria-label="Duração" />
                 <select value={m.unidade} onChange={(e) => mudarModulo(m.id, (x) => ({ ...x, unidade: e.target.value as 'h' | 't' }))} aria-label="Unidade">
                   <option value="h">horas</option>
                   <option value="t">tempos</option>
@@ -254,7 +269,6 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
                 <span className="mod-info">
                   {m.unidade === 'h' && `${temposDoModulo(m, estado.calendario.minutosPorTempo)} tempos`}
                   {pm?.inicio && ` · ${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}`}
-                  {m.codigo && !conhecido && m.codigo.startsWith('UC') && <span className="warn"> · código não está no catálogo</span>}
                 </span>
                 <div className="row">
                   <button className="icon-btn" onClick={() => moverModulo(i, -1)} disabled={i === 0} aria-label="Subir"><IconUp /></button>
@@ -270,8 +284,9 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
           <div className="search-add">
             <input placeholder="Procurar UC por código ou nome (ex.: 2634, CSS)" value={procura} onChange={(e) => setProcura(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && procurarCodigo(estado.catalogo, procura)) {
-                  addModulo(normalizarCodigo(procura));
+                const achado = procurarCodigo(estado.catalogo, procura);
+                if (e.key === 'Enter' && achado) {
+                  addModulo(achado);
                   setProcura('');
                 }
               }} />
@@ -279,8 +294,8 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar }: {
               <ul className="results">
                 {resultados.map((r) => (
                   <li key={r.codigo}>
-                    <button onClick={() => { addModulo(r.codigo); setProcura(''); }}>
-                      <strong>{r.codigo}</strong> {r.nome} <small>{r.horas} h{r.opcional ? ' · opcional' : ''}</small>
+                    <button onClick={() => { addModulo(r); setProcura(''); }}>
+                      {codigoVisivel(r) && <strong>{codigoVisivel(r)} </strong>}{r.nome} <small>{r.horas} h{r.opcional ? ' · opcional' : ''}</small>
                     </button>
                   </li>
                 ))}
