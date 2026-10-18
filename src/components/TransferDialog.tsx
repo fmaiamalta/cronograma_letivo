@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { gistDoTexto } from '../lib/sync';
 import { codificar, descodificar, linkDados } from '../lib/transfer';
 import type { Estado } from '../lib/types';
 
@@ -48,7 +49,12 @@ export function EnviarDialog({ estado, onFechar }: { estado: Estado; onFechar: (
   );
 }
 
-export function ReceberDialog({ inicial = '', onAplicar, onFechar }: { inicial?: string; onAplicar: (p: Pacote) => void; onFechar: () => void }) {
+export function ReceberDialog({ inicial = '', onAplicar, onLigarSync, onFechar }: {
+  inicial?: string;
+  onAplicar: (p: Pacote) => void;
+  onLigarSync: (gistId: string) => void;
+  onFechar: () => void;
+}) {
   const [texto, setTexto] = useState(inicial);
   const [pacote, setPacote] = useState<Pacote | null>(null);
   const [erro, setErro] = useState(false);
@@ -78,6 +84,7 @@ export function ReceberDialog({ inicial = '', onAplicar, onFechar }: { inicial?:
     }
   };
 
+  const gist = gistDoTexto(texto);
   const nModulos = pacote?.disciplinas.reduce((s, d) => s + d.modulos.length, 0) ?? 0;
 
   return (
@@ -90,11 +97,16 @@ export function ReceberDialog({ inicial = '', onAplicar, onFechar }: { inicial?:
             {pacote.disciplinas.length} disciplinas · {nModulos} módulos · calendário {pacote.calendario.anoLetivo}
           </p>
         )}
-        {erro && <p className="warn small">Link inválido ou incompleto.</p>}
+        {gist && <p className="small">Link de sincronização automática.</p>}
+        {erro && !gist && <p className="warn small">Link inválido ou incompleto.</p>}
         <p className="muted small">Substitui o horário, o calendário e as tarefas deste aparelho. Tarefas já feitas aqui ficam feitas.</p>
         <div className="row wrap end">
           <button className="btn" onClick={colar}>Colar</button>
-          <button className="btn primary" disabled={!pacote} onClick={() => pacote && onAplicar(pacote)}>Receber</button>
+          {gist ? (
+            <button className="btn primary" onClick={() => onLigarSync(gist)}>Ligar</button>
+          ) : (
+            <button className="btn primary" disabled={!pacote} onClick={() => pacote && onAplicar(pacote)}>Receber</button>
+          )}
           <button className="btn" onClick={onFechar}>Fechar</button>
         </div>
       </div>

@@ -435,3 +435,4 @@ textarea.codigo {
 .leitura-linha small { color: var(--muted); white-space: nowrap; }
 .card.leitura .mod-progress { margin-top: 6px; }
 .card.leitura .mono { color: var(--muted); font-size: 0.78rem; }
+.dialog a { color: var(--accent); font-weight: 600; }

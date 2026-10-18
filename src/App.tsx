@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarioView } from './components/CalendarioView';
 import { CatalogoView } from './components/CatalogoView';
 import { Gantt } from './components/Gantt';
@@ -6,13 +6,15 @@ import { HorarioView } from './components/HorarioView';
 import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './components/icons';
 import { HorarioLeitura } from './components/HorarioLeitura';
 import { ModuloPanel } from './components/ModuloPanel';
+import { SyncDialog } from './components/SyncDialog';
 import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
 import { TarefasView } from './components/TarefasView';
 import { todayISO } from './lib/dates';
 import { planear } from './lib/engine';
 import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
-import { aplicarPacote } from './lib/transfer';
+import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } from './lib/sync';
+import { aplicarPacote, codificar, descodificar } from './lib/transfer';
 import type { CalendarioEscolar, Modulo } from './lib/types';
 
 type Separador = 'cronograma' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
@@ -58,7 +60,7 @@ function useTelemovel(): boolean {
 
 export default function App() {
   const telemovel = useTelemovel();
-  const [transfer, setTransfer] = useState<'enviar' | 'receber' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
+  const [transfer, setTransfer] = useState<'enviar' | 'receber' | 'sync' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
   const [dadosLink] = useState(() => (location.hash.includes('dados=') ? location.hash : ''));
   const { estado, atualizar, setEstado, gravado } = useEstado();
   const [sep, setSep] = useState<Separador>(() =>
@@ -128,6 +130,82 @@ export default function App() {
     history.replaceState(null, '', location.pathname + location.search);
   };
 
+  // ---- Sincronização automática (computador → telemóvel) ----
+  const [sync, setSyncState] = useState<ConfigSync>(() => {
+    // Link "#sync=..." aberto diretamente (Android): fica ligado a esse Gist.
+    const g = gistDoTexto(location.hash);
+    return g ? gravarSync({ ...lerSync(), gistId: g, token: undefined, etag: undefined }) : lerSync();
+  });
+  const setSync = useCallback((f: (s: ConfigSync) => ConfigSync) => setSyncState((s) => gravarSync(f(s))), []);
+  const estadoRef = useRef(estado);
+  estadoRef.current = estado;
+  const syncRef = useRef(sync);
+  syncRef.current = sync;
+  const ultimoEnviado = useRef('');
+
+  useEffect(() => {
+    if (gistDoTexto(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+  }, []);
+
+  const enviarAgora = useCallback(
+    async (token?: string) => {
+      const s = syncRef.current;
+      const tk = token ?? s.token;
+      if (!tk) return;
+      const codigo = await codificar(estadoRef.current);
+      try {
+        const id = await publicar(tk, s.gistId, codigo);
+        ultimoEnviado.current = codigo;
+        setSync((x) => ({ ...x, token: tk, gistId: id, ultimo: new Date().toISOString(), erro: undefined }));
+      } catch (err) {
+        setSync((x) => ({ ...x, erro: (err as Error).message }));
+        throw err;
+      }
+    },
+    [setSync],
+  );
+
+  // Computador: envia 3 s depois da última alteração.
+  useEffect(() => {
+    if (!sync.token || !sync.gistId) return;
+    const t = setTimeout(async () => {
+      if ((await codificar(estadoRef.current)) === ultimoEnviado.current) return;
+      enviarAgora().catch(() => undefined);
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [estado, sync.token, sync.gistId, enviarAgora]);
+
+  // Telemóvel: vai buscar ao abrir, ao voltar à app e de 5 em 5 minutos.
+  const puxar = useCallback(async () => {
+    const s = syncRef.current;
+    if (s.token || !s.gistId) return;
+    try {
+      const r = await obter(s.gistId, s.etag);
+      if (r.naoMudou || !r.codigo) {
+        setSync((x) => ({ ...x, ultimo: new Date().toISOString(), erro: undefined }));
+        return;
+      }
+      const p = await descodificar(r.codigo);
+      if (!p) throw new Error('Dados recebidos inválidos.');
+      atualizar((e) => aplicarPacote(e, p));
+      setSync((x) => ({ ...x, etag: r.etag, ultimo: new Date().toISOString(), erro: undefined }));
+    } catch (err) {
+      setSync((x) => ({ ...x, erro: (err as Error).message }));
+    }
+  }, [atualizar, setSync]);
+
+  useEffect(() => {
+    if (sync.token || !sync.gistId) return;
+    puxar();
+    const aoVoltar = () => document.visibilityState === 'visible' && puxar();
+    document.addEventListener('visibilitychange', aoVoltar);
+    const t = setInterval(puxar, 5 * 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', aoVoltar);
+      clearInterval(t);
+    };
+  }, [sync.token, sync.gistId, puxar]);
+
   const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'horario' || x.id === 'tarefas') : SEPARADORES;
   // No telemóvel não há Calendário nem Catálogo: mostra o cronograma.
   const atual: Separador = telemovel && (sep === 'calendario' || sep === 'catalogo') ? 'cronograma' : sep;
@@ -163,9 +241,15 @@ export default function App() {
           <summary aria-label="Mais opções">⋯</summary>
           <div className="menu-pop" onClick={fecharMenu}>
             {telemovel ? (
-              <button onClick={() => setTransfer('receber')}>Receber do computador</button>
+              <>
+                <button onClick={() => setTransfer('receber')}>Receber do computador</button>
+                {sync.gistId && !sync.token && <button onClick={() => puxar()}>Atualizar agora</button>}
+              </>
             ) : (
-              <button onClick={() => setTransfer('enviar')}>Enviar para o telemóvel</button>
+              <>
+                <button onClick={() => setTransfer('sync')}>Sincronizar com o telemóvel</button>
+                <button onClick={() => setTransfer('enviar')}>Enviar link (manual)</button>
+              </>
             )}
             <button onClick={exportar}>Exportar cópia (.json)</button>
             <label>
@@ -177,6 +261,7 @@ export default function App() {
         </details>
       </header>
 
+      {telemovel && sync.erro && !sync.token && <div className="banner warn-bg">Sincronização: {sync.erro}</div>}
       {!gravado && <div className="banner warn-bg">Os dados não estão a ser guardados neste browser (janela privada?). Convém exportar uma cópia.</div>}
 
       {calRecebido && (
@@ -273,10 +358,23 @@ export default function App() {
       )}
 
       {transfer === 'enviar' && <EnviarDialog estado={estado} onFechar={fecharTransfer} />}
+      {transfer === 'sync' && (
+        <SyncDialog
+          sync={sync}
+          onLigar={(token) => enviarAgora(token)}
+          onDesligar={() => setSync((x) => ({ ...x, token: undefined, erro: undefined }))}
+          onFechar={fecharTransfer}
+        />
+      )}
       {transfer === 'receber' && (
         <ReceberDialog
           inicial={dadosLink}
           onFechar={fecharTransfer}
+          onLigarSync={(gistId) => {
+            setSync((x) => ({ ...x, gistId, token: undefined, etag: undefined, erro: undefined }));
+            fecharTransfer();
+            setSep('cronograma');
+          }}
           onAplicar={(p) => {
             atualizar((e) => aplicarPacote(e, p));
             fecharTransfer();

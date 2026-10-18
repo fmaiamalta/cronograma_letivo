@@ -24,6 +24,10 @@ Publicada em `https://fmaiamalta.github.io/cronograma_letivo/`. Cada push para `
   a app usa o calendário nacional 2026/2027. Partilha-se com os colegas por
   link (`#cal=...`).
 - Os dados ficam no dispositivo (localStorage). Exportar e importar cópia em JSON.
+- Edição no computador; no telemóvel só consulta (Cronograma, Horário, Tarefas).
+- Sincronização automática do computador para o telemóvel através de um Gist
+  secreto do GitHub (menu ⋯ › Sincronizar com o telemóvel). O computador usa
+  uma chave do GitHub só com a permissão "gist"; o telemóvel só lê.
 
 ## Desenvolvimento
 
