@@ -7,6 +7,7 @@ import { HorarioView } from './components/HorarioView';
 import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './components/icons';
 import { HorarioLeitura } from './components/HorarioLeitura';
 import { ModuloPanel } from './components/ModuloPanel';
+import { ContaDialog } from './components/ContaDialog';
 import { SyncDialog } from './components/SyncDialog';
 import { TarefaForm, type DestinoTarefa } from './components/TarefaForm';
 import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
@@ -16,7 +17,9 @@ import { planear } from './lib/engine';
 import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
 import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } from './lib/sync';
+import { nuvemConfigurada } from './lib/nuvem';
 import { aplicarPacote, codificar, descodificar } from './lib/transfer';
+import { useNuvem } from './lib/useNuvem';
 import { ensinoDe, type CalendarioEscolar, type Modulo } from './lib/types';
 
 type Separador = 'cronograma' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
@@ -62,7 +65,7 @@ function useTelemovel(): boolean {
 
 export default function App() {
   const telemovel = useTelemovel();
-  const [transfer, setTransfer] = useState<'enviar' | 'receber' | 'sync' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
+  const [transfer, setTransfer] = useState<'enviar' | 'receber' | 'sync' | 'conta' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
   const [dadosLink] = useState(() => (location.hash.includes('dados=') ? location.hash : ''));
   const { estado, atualizar, setEstado, gravado } = useEstado();
   const [sep, setSep] = useState<Separador>(() =>
@@ -244,6 +247,11 @@ export default function App() {
     };
   }, [sync.token, sync.gistId, puxar]);
 
+  // ---- Conta (e-mail): os mesmos dados em todos os aparelhos ----
+  const conta = useNuvem(estado, setEstado);
+  // A sincronização por Gist só aparece a quem já a tinha ligado.
+  const gistLigado = !!(sync.token || sync.gistId);
+
   const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'horario' || x.id === 'tarefas') : SEPARADORES;
   // No telemóvel não há Calendário nem Catálogo: mostra o cronograma.
   const atual: Separador = telemovel && (sep === 'calendario' || sep === 'catalogo') ? 'cronograma' : sep;
@@ -278,6 +286,9 @@ export default function App() {
         <details className="menu">
           <summary aria-label="Mais opções">⋯</summary>
           <div className="menu-pop" onClick={fecharMenu}>
+            {nuvemConfigurada && (
+              <button onClick={() => setTransfer('conta')}>{conta.email ? `Conta: ${conta.email}` : 'Entrar com o e-mail'}</button>
+            )}
             {telemovel ? (
               <>
                 <button onClick={() => setTransfer('receber')}>Receber do computador</button>
@@ -285,7 +296,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <button onClick={() => setTransfer('sync')}>Sincronizar com o telemóvel</button>
+                {(!nuvemConfigurada || gistLigado) && <button onClick={() => setTransfer('sync')}>Sincronizar com o telemóvel</button>}
                 <button onClick={() => setTransfer('enviar')}>Enviar link (manual)</button>
               </>
             )}
@@ -357,7 +368,11 @@ export default function App() {
                 <div className="empty">
                   <p>Sem dados.</p>
                   <div className="row">
-                    <button className="btn primary" onClick={() => setTransfer('receber')}>Receber do computador</button>
+                    {nuvemConfigurada ? (
+                      <button className="btn primary" onClick={() => setTransfer('conta')}>Entrar com o e-mail</button>
+                    ) : (
+                      <button className="btn primary" onClick={() => setTransfer('receber')}>Receber do computador</button>
+                    )}
                   </div>
                 </div>
               ) : <div className="empty">
@@ -432,6 +447,16 @@ export default function App() {
           onGravar={gravarTarefa}
           onApagar={formTarefa.inicial ? () => apagarTarefa(formTarefa.inicial!) : undefined}
           onFechar={() => setFormTarefa(null)}
+        />
+      )}
+      {transfer === 'conta' && (
+        <ContaDialog
+          email={conta.email}
+          info={conta.info}
+          onEntrou={async () => { await conta.aposEntrar(); setSep('cronograma'); }}
+          onSair={() => { conta.terminar(); fecharTransfer(); }}
+          onSincronizar={() => conta.sincronizar()}
+          onFechar={fecharTransfer}
         />
       )}
       {transfer === 'enviar' && <EnviarDialog estado={estado} onFechar={fecharTransfer} />}

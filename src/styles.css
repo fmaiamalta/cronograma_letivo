@@ -547,3 +547,4 @@ textarea.codigo {
 .gc-ensino { position: relative; z-index: 2; border-top: 3px solid var(--text); background: var(--surface); padding: 2px 0; }
 .gc-ensino .gc-sticky { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 section:first-child > .gc-ensino { border-top: 0; }
+.dialog-form { display: flex; flex-direction: column; gap: 10px; }
