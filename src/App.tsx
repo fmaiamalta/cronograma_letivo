@@ -7,6 +7,7 @@ import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './co
 import { HorarioLeitura } from './components/HorarioLeitura';
 import { ModuloPanel } from './components/ModuloPanel';
 import { SyncDialog } from './components/SyncDialog';
+import { TarefaForm, type DestinoTarefa } from './components/TarefaForm';
 import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
 import { TarefasView } from './components/TarefasView';
 import { todayISO } from './lib/dates';
@@ -70,6 +71,7 @@ export default function App() {
   const [filtroTurma, setFiltroTurma] = useState<string>('');
   const [aberto, setAberto] = useState<{ d: string; m: string } | null>(null);
   const [editar, setEditar] = useState<string | null>(null);
+  const [formTarefa, setFormTarefa] = useState<{ inicial?: DestinoTarefa } | null>(null);
   const [calRecebido, setCalRecebido] = useState<CalendarioEscolar | null>(() => calendarioDoLink(location.hash));
   const [hoje, setHoje] = useState(todayISO());
 
@@ -96,6 +98,33 @@ export default function App() {
 
   const alternarTarefa = (dId: string, mId: string, tId: string) =>
     mudarModulo(dId, mId, (m) => ({ ...m, tarefas: m.tarefas.map((t) => (t.id === tId ? { ...t, feita: !t.feita } : t)) }));
+
+  /** Grava uma tarefa nova ou editada; se mudou de módulo, sai do antigo. */
+  const gravarTarefa = (antes: DestinoTarefa | undefined, depois: DestinoTarefa) => {
+    atualizar((e) => ({
+      ...e,
+      disciplinas: e.disciplinas.map((d) => ({
+        ...d,
+        modulos: d.modulos.map((m) => {
+          let tarefas = m.tarefas;
+          if (antes && d.id === antes.dId && m.id === antes.mId) tarefas = tarefas.filter((t) => t.id !== antes.tarefa.id);
+          if (d.id === depois.dId && m.id === depois.mId) {
+            // No mesmo módulo fica no mesmo lugar; num módulo novo entra no fim.
+            tarefas = m.tarefas.some((t) => t.id === depois.tarefa.id)
+              ? m.tarefas.map((t) => (t.id === depois.tarefa.id ? depois.tarefa : t))
+              : [...tarefas, depois.tarefa];
+          }
+          return tarefas === m.tarefas ? m : { ...m, tarefas };
+        }),
+      })),
+    }));
+    setFormTarefa(null);
+  };
+
+  const apagarTarefa = (alvo: DestinoTarefa) => {
+    mudarModulo(alvo.dId, alvo.mId, (m) => ({ ...m, tarefas: m.tarefas.filter((t) => t.id !== alvo.tarefa.id) }));
+    setFormTarefa(null);
+  };
 
   const carregarExemplo = () => {
     atualizar((e) => ({ ...e, ...exemplo() }));
@@ -341,7 +370,15 @@ export default function App() {
         )}
         {atual === 'calendario' && <CalendarioView estado={estado} atualizar={atualizar} />}
         {atual === 'catalogo' && <CatalogoView estado={estado} atualizar={atualizar} />}
-        {atual === 'tarefas' && <TarefasView estado={estado} hoje={hoje} onAlternar={alternarTarefa} onAbrir={(d, m) => setAberto({ d, m })} />}
+        {atual === 'tarefas' && <TarefasView
+            estado={estado}
+            hoje={hoje}
+            soLeitura={telemovel}
+            onAlternar={alternarTarefa}
+            onAbrir={(d, m) => setAberto({ d, m })}
+            onNova={() => setFormTarefa({})}
+            onEditar={(dId, mId, tarefa) => setFormTarefa({ inicial: { dId, mId, tarefa } })}
+          />}
       </main>
 
       {planoAberto && pmAberto && (
@@ -357,6 +394,15 @@ export default function App() {
         />
       )}
 
+      {formTarefa && !telemovel && (
+        <TarefaForm
+          estado={estado}
+          inicial={formTarefa.inicial}
+          onGravar={gravarTarefa}
+          onApagar={formTarefa.inicial ? () => apagarTarefa(formTarefa.inicial!) : undefined}
+          onFechar={() => setFormTarefa(null)}
+        />
+      )}
       {transfer === 'enviar' && <EnviarDialog estado={estado} onFechar={fecharTransfer} />}
       {transfer === 'sync' && (
         <SyncDialog

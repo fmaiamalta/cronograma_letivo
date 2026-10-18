@@ -68,7 +68,11 @@ export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar, soLe
             <li key={t.id} className={t.feita ? 'done' : t.data && t.data < hoje ? 'late' : ''}>
               <label>
                 <input type="checkbox" checked={t.feita} onChange={() => mudarTarefa(t.id, (x) => ({ ...x, feita: !x.feita }))} />
-                <span>{t.titulo}</span>
+                <span>
+                  {t.titulo}
+                  {t.fim && <small className="muted"> · {fmtLong(t.data!)} a {fmtLong(t.fim)}</small>}
+                  {t.descricao && <small className="tarefa-desc">{t.descricao}</small>}
+                </span>
               </label>
               {soLeitura ? <small className="muted">{t.data ? fmtLong(t.data) : ''}</small> : <>
               <input type="date" value={t.data ?? ''} onChange={(e) => mudarTarefa(t.id, (x) => ({ ...x, data: e.target.value || undefined }))} aria-label="Data da tarefa" />

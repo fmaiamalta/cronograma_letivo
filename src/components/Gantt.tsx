@@ -218,16 +218,30 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
                         {etiquetasTrocos(trocos(pm, quebras), x, pxDia).map((e) => (
                           <span key={e.chave} className="gantt-date" style={{ left: e.left }}>{e.texto}</span>
                         ))}
-                        {m.tarefas.filter((t) => t.data).map((t) => (
-                          <button
-                            key={t.id}
-                            className={'gantt-task' + (t.feita ? ' done' : t.data! < hoje ? ' late' : '')}
-                            style={{ left: x(t.data!) + pxDia / 2 }}
-                            title={`${t.feita ? '✓ ' : ''}${t.titulo} (${fmtLong(t.data!)})`}
-                            onClick={() => onAbrir(d.id, m.id)}
-                            aria-label={`Tarefa: ${t.titulo}`}
-                          />
-                        ))}
+                        {m.tarefas.filter((t) => t.data).map((t) => {
+                          const estado = t.feita ? ' done' : (t.fim ?? t.data!) < hoje ? ' late' : '';
+                          const titulo = `${t.feita ? '✓ ' : ''}${t.titulo} (${fmtLong(t.data!)}${t.fim ? ` a ${fmtLong(t.fim)}` : ''})${t.descricao ? `\n${t.descricao}` : ''}`;
+                          // Tarefa com período: faixa entre o início e o fim; de um dia: losango.
+                          return t.fim ? (
+                            <button
+                              key={t.id}
+                              className={'gantt-task-range' + estado}
+                              style={{ left: x(t.data!), width: Math.max(pxDia, x(t.fim) + pxDia - x(t.data!)) }}
+                              title={titulo}
+                              onClick={() => onAbrir(d.id, m.id)}
+                              aria-label={`Tarefa: ${t.titulo}`}
+                            />
+                          ) : (
+                            <button
+                              key={t.id}
+                              className={'gantt-task' + estado}
+                              style={{ left: x(t.data!) + pxDia / 2 }}
+                              title={titulo}
+                              onClick={() => onAbrir(d.id, m.id)}
+                              aria-label={`Tarefa: ${t.titulo}`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   );

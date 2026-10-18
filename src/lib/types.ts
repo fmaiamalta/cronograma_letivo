@@ -55,8 +55,17 @@ export interface EntradaCatalogo {
 export interface Tarefa {
   id: string;
   titulo: string;
+  descricao?: string;
+  /** Dia da tarefa, ou início de um período. */
   data?: ISODate;
+  /** Fim do período (só nas tarefas com início e fim). */
+  fim?: ISODate;
   feita: boolean;
+}
+
+/** Último dia de uma tarefa: o fim do período ou o próprio dia. */
+export function prazo(t: Tarefa): ISODate | undefined {
+  return t.fim ?? t.data;
 }
 
 export interface Modulo {
