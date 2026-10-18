@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
-import { temposDoModulo, type PlanoDisciplina } from '../lib/engine';
+import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { ANOS, COMPONENTES, ehGeral, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
@@ -172,6 +172,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
   };
 
   const geral = ehGeral(d);
+  const doCalendario = limitesDisciplina({ ...d, inicio: undefined, fim: undefined }, estado.calendario);
 
   /** Ensino geral: um só "módulo" anual com o nome da disciplina (mantém as tarefas). */
   const moduloAnual = (x: Disciplina, nome: string): Modulo[] => {
@@ -253,8 +254,15 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
       </fieldset>
 
       <div className="grid-form">
-        <label>Começa em (opcional)<input type="date" value={d.inicio ?? ''} onChange={(e) => set('inicio', e.target.value || undefined)} /></label>
-        <label>Acaba em (opcional)<input type="date" value={d.fim ?? ''} onChange={(e) => set('fim', e.target.value || undefined)} /></label>
+        {/* Sem valor próprio, mostram as datas do calendário para o ano e o ensino; só ficam fixas se forem alteradas. */}
+        <label>Começa em
+          <input type="date" value={d.inicio ?? doCalendario.inicio} onChange={(e) => set('inicio', e.target.value && e.target.value !== doCalendario.inicio ? e.target.value : undefined)} />
+          <small className="muted">{d.inicio ? <button type="button" className="link-btn small" onClick={() => set('inicio', undefined)}>Repor do calendário</button> : 'Do calendário'}</small>
+        </label>
+        <label>Acaba em
+          <input type="date" value={d.fim ?? doCalendario.fim} onChange={(e) => set('fim', e.target.value && e.target.value !== doCalendario.fim ? e.target.value : undefined)} />
+          <small className="muted">{d.fim ? <button type="button" className="link-btn small" onClick={() => set('fim', undefined)}>Repor do calendário</button> : 'Do calendário'}</small>
+        </label>
       </div>
 
       <fieldset>

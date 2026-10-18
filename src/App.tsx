@@ -17,7 +17,7 @@ import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
 import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } from './lib/sync';
 import { aplicarPacote, codificar, descodificar } from './lib/transfer';
-import type { CalendarioEscolar, Modulo } from './lib/types';
+import { ensinoDe, type CalendarioEscolar, type Modulo } from './lib/types';
 
 type Separador = 'cronograma' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
 
@@ -92,7 +92,12 @@ export default function App() {
     [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje],
   );
   const turmas = [...new Set(estado.disciplinas.map((d) => d.turma))].sort();
-  const visiveis = filtroTurma ? planos.filter((p) => p.disciplina.turma === filtroTurma) : planos;
+  // Agrupados por tipo de ensino (profissional, secundário, básico), mantendo a ordem do horário.
+  const ORDEM_ENSINO = { profissional: 0, secundario: 1, basico: 2 } as const;
+  const visiveis = (filtroTurma ? planos.filter((p) => p.disciplina.turma === filtroTurma) : planos)
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => ORDEM_ENSINO[ensinoDe(a.p.disciplina)] - ORDEM_ENSINO[ensinoDe(b.p.disciplina)] || a.i - b.i)
+    .map((x) => x.p);
 
   const mudarModulo = (dId: string, mId: string, f: (m: Modulo) => Modulo) =>
     atualizar((e) => ({

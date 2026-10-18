@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
 import type { CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
-import { COMPONENTES, ehGeral } from '../lib/types';
+import { COMPONENTES, ehGeral, ENSINOS, ensinoDe } from '../lib/types';
 
 interface Props {
   calendario: CalendarioEscolar;
@@ -166,7 +166,7 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
             {hojeVisivel && <div className="gantt-today" style={{ left: x(hoje) + pxDia / 2 }} />}
           </div>
 
-          {planos.map((p) => {
+          {planos.map((p, idx) => {
             const d = p.disciplina;
             const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
             const quebras = [...calendario.interrupcoes, ...periodos];
@@ -176,6 +176,12 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
             const geral = ehGeral(d);
             return (
               <section key={d.id} className={'gantt-group' + (geral ? ' geral' : '')} style={{ ['--cor' as string]: d.cor }}>
+                {/* Linha grossa a separar os tipos de ensino, quando há mais do que um. */}
+                {new Set(planos.map((x) => ensinoDe(x.disciplina))).size > 1 && (idx === 0 || ensinoDe(planos[idx - 1].disciplina) !== ensinoDe(d)) && (
+                  <div className="gantt-ensino">
+                    <span className="gantt-label">Ensino {ENSINOS.find((e) => e.id === ensinoDe(d))!.nome.toLowerCase()}</span>
+                  </div>
+                )}
                 {!geral && <div className="gantt-row gantt-row-group">
                   <div className="gantt-label">
                     <strong>{d.turma} | {d.nome}</strong>

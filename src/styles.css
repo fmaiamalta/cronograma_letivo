@@ -536,3 +536,14 @@ textarea.codigo {
 .gantt-group.geral .gantt-mod { border-left: 5px solid var(--cor); }
 .gantt-group.geral .gantt-row { border-top: 1px solid var(--border); }
 .gc-row:has(.gc-mod strong) { border-left: 4px solid var(--cor); }
+
+/* Separação entre tipos de ensino */
+.gantt-ensino { position: relative; z-index: 2; border-top: 4px solid var(--text); background: var(--surface); }
+.gantt-ensino .gantt-label {
+  min-height: 0; padding: 4px 10px; border-right: 0; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); width: max-content; background: transparent;
+}
+.gantt-group:first-child .gantt-ensino { border-top: 0; }
+.gc-ensino { position: relative; z-index: 2; border-top: 3px solid var(--text); background: var(--surface); padding: 2px 0; }
+.gc-ensino .gc-sticky { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+section:first-child > .gc-ensino { border-top: 0; }

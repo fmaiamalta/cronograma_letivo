@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
-import { ehGeral, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
+import { ehGeral, ENSINOS, ensinoDe, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
 import { fimDoMes, primeiroDoMes, trocos } from './Gantt';
 
 interface Props {
@@ -98,12 +98,17 @@ export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, o
             {hojeVisivel && <div className="gantt-today" style={{ left: x(hoje) + pxDia / 2 }} />}
           </div>
 
-          {planos.map((p) => {
+          {planos.map((p, idx) => {
             const d = p.disciplina;
             const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
             const quebras = [...calendario.interrupcoes, ...periodos];
             return (
               <section key={d.id} style={{ ['--cor' as string]: d.cor }}>
+                {new Set(planos.map((x) => ensinoDe(x.disciplina))).size > 1 && (idx === 0 || ensinoDe(planos[idx - 1].disciplina) !== ensinoDe(d)) && (
+                  <div className="gc-ensino">
+                    <span className="gc-sticky">Ensino {ENSINOS.find((e) => e.id === ensinoDe(d))!.nome.toLowerCase()}</span>
+                  </div>
+                )}
                 {!ehGeral(d) && (
                   <div className="gc-group">
                     <span className="gc-sticky">{d.turma} | {d.nome}</span>
