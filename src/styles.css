@@ -412,6 +412,7 @@ tr:last-child td { border-bottom: 0; }
 .dialog {
   width: min(520px, 100%); background: var(--surface); border-radius: 14px; padding: 18px;
   box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+  max-height: calc(100dvh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .dialog h2 { margin: 0; }
 .dialog .row.end { margin-top: 4px; }

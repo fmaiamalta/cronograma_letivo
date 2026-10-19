@@ -421,7 +421,6 @@ export default function App() {
         {atual === 'tarefas' && <TarefasView
             estado={estado}
             hoje={hoje}
-            soLeitura={telemovel}
             onAlternar={alternarTarefa}
             onAbrir={(d, m) => setAberto({ d, m })}
             onNova={() => setFormTarefa({})}
@@ -442,7 +441,7 @@ export default function App() {
         />
       )}
 
-      {formTarefa && !telemovel && (
+      {formTarefa && (
         <TarefaForm
           estado={estado}
           inicial={formTarefa.inicial}
