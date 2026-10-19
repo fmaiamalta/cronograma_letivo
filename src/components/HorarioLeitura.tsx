@@ -1,13 +1,21 @@
 import { DIAS_SEMANA, fmtShort } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
-import { COMPONENTES } from '../lib/types';
+import { COMPONENTES, type Estado } from '../lib/types';
+import { Ausencias } from './Ausencias';
 
 /** Horário só para consulta (telemóvel). */
-export function HorarioLeitura({ planos, onAbrir }: { planos: PlanoDisciplina[]; onAbrir: (d: string, m: string) => void }) {
+export function HorarioLeitura({ planos, onAbrir, estado, atualizar }: {
+  planos: PlanoDisciplina[];
+  onAbrir: (d: string, m: string) => void;
+  estado: Estado;
+  atualizar: (f: (e: Estado) => Estado) => void;
+}) {
   if (!planos.length) return <div className="page"><h1>Horário</h1><div className="empty"><p>Sem dados.</p></div></div>;
   return (
     <div className="page">
       <h1>Horário</h1>
+      {/* No telemóvel também se marcam faltas (greve, doença): o cronograma acerta logo. */}
+      <Ausencias estado={estado} atualizar={atualizar} />
       {planos.map((p) => {
         const d = p.disciplina;
         const dias = d.tempos.map((t, i) => (t > 0 ? `${DIAS_SEMANA[i]} ${t}` : '')).filter(Boolean).join(' · ');

@@ -91,8 +91,8 @@ export default function App() {
   useEffect(() => gravarPreferencia('cronograma.zoomTel', zoomTel), [zoomTel]);
 
   const planos = useMemo(
-    () => estado.disciplinas.map((d) => planear(d, estado.calendario, estado.periodosTurma, hoje)),
-    [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje],
+    () => estado.disciplinas.map((d) => planear(d, estado.calendario, estado.periodosTurma, hoje, estado.ausencias)),
+    [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje, estado.ausencias],
   );
   const turmas = [...new Set(estado.disciplinas.map((d) => d.turma))].sort();
   // Agrupados por tipo de ensino (profissional, secundário, básico), mantendo a ordem do horário.
@@ -390,6 +390,7 @@ export default function App() {
                   calendario={estado.calendario}
                   planos={visiveis}
                   periodosTurma={estado.periodosTurma}
+                  ausencias={estado.ausencias ?? []}
                   hoje={hoje}
                   zoom={zoomTel}
                   onAbrir={(d, m) => setAberto({ d, m })}
@@ -398,6 +399,7 @@ export default function App() {
                 calendario={estado.calendario}
                 planos={visiveis}
                 periodosTurma={estado.periodosTurma}
+                  ausencias={estado.ausencias ?? []}
                 hoje={hoje}
                 pxDia={pxDia}
                 onAbrir={(d, m) => setAberto({ d, m })}
@@ -405,13 +407,13 @@ export default function App() {
             )}
             <p className="legend ajuda">
               {estado.calendario.interrupcoes.map((i) => `${i.nome} ${i.inicio.slice(8, 10)}/${i.inicio.slice(5, 7)}–${i.fim.slice(8, 10)}/${i.fim.slice(5, 7)}`).join(' | ')}
-              . Linhas finas: feriados.
+              . Linhas finas: feriados.{(estado.ausencias ?? []).length > 0 && ' Riscado: faltas do professor.'}
             </p>
           </div>
         )}
         {atual === 'horario' && (
           telemovel ? (
-            <HorarioLeitura planos={planos} onAbrir={(d, m) => setAberto({ d, m })} />
+            <HorarioLeitura planos={planos} onAbrir={(d, m) => setAberto({ d, m })} estado={estado} atualizar={atualizar} />
           ) : (
             <HorarioView estado={estado} planos={planos} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
           )

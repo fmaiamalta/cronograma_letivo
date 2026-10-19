@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
-import type { CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
+import type { Ausencia, CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
 import { COMPONENTES, ehGeral, ENSINOS, ensinoDe } from '../lib/types';
 
 interface Props {
   calendario: CalendarioEscolar;
   planos: PlanoDisciplina[];
   periodosTurma: PeriodoTurma[];
+  ausencias: Ausencia[];
   hoje: ISODate;
   pxDia: number;
   onAbrir: (disciplinaId: string, moduloId: string) => void;
@@ -45,6 +46,11 @@ export function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate
   return out;
 }
 
+/** Tudo o que parte a linha de uma disciplina: interrupções, períodos da turma, faltas e dias sem aula. */
+export function quebrasDe(cal: CalendarioEscolar, periodos: PeriodoTurma[], ausencias: Ausencia[], diasSemAula: ISODate[]): { inicio: ISODate; fim: ISODate }[] {
+  return [...cal.interrupcoes, ...periodos, ...ausencias, ...diasSemAula.map((d) => ({ inicio: d, fim: d }))];
+}
+
 interface Etiqueta {
   chave: string;
   texto: string;
@@ -77,7 +83,7 @@ function etiquetasTrocos(lista: [ISODate, ISODate][], x: (d: ISODate) => number,
   });
 }
 
-export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir }: Props) {
+export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDia, onAbrir }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   const [LARGURA_ROTULO, setRotulo] = useState(larguraRotulo);
   useEffect(() => {
@@ -160,6 +166,9 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
                 <span>{i.nome}</span>
               </div>
             ))}
+            {ausencias.map((a) => (
+              <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: (diffDays(a.inicio, a.fim) + 1) * pxDia }} title={`${a.nome}: ${a.inicio === a.fim ? fmtLong(a.inicio) : `${fmtLong(a.inicio)} a ${fmtLong(a.fim)}`}`} />
+            ))}
             {calendario.feriados.map((f) => (
               <div key={f.id} className="gantt-holiday" title={`${f.nome} (${fmtLong(f.data)})`} style={{ left: x(f.data) + pxDia / 2 }} />
             ))}
@@ -169,7 +178,7 @@ export function Gantt({ calendario, planos, periodosTurma, hoje, pxDia, onAbrir 
           {planos.map((p, idx) => {
             const d = p.disciplina;
             const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
-            const quebras = [...calendario.interrupcoes, ...periodos];
+            const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula);
             const comp = COMPONENTES.find((c) => c.id === d.componente)?.nome;
             const falta = p.temposNecessarios - p.temposDisponiveis;
             // Ensino geral: a disciplina é uma só linha, sem cabeçalho de grupo.

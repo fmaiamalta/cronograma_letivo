@@ -31,4 +31,12 @@ describe('passagem computador → telemóvel', () => {
     expect(r.disciplinas[0].modulos[0].tarefas[1].feita).toBe(true);
     expect(r.catalogo).toEqual([]);
   });
+
+  it('leva as faltas do professor; um código antigo mantém as do aparelho', async () => {
+    const pc = { ...estadoInicial(), ausencias: [{ id: 'g', nome: 'Greve', inicio: '2026-11-13', fim: '2026-11-13' }] };
+    const p = await descodificar(await codificar(pc));
+    expect(p?.ausencias).toEqual(pc.ausencias);
+    const tel = { ...estadoInicial(), ausencias: [{ id: 'd', nome: 'Doença', inicio: '2026-11-20', fim: '2026-11-20' }] };
+    expect(aplicarPacote(tel, { calendario: pc.calendario, disciplinas: [], periodosTurma: [] }).ausencias).toEqual(tel.ausencias);
+  });
 });

@@ -45,6 +45,7 @@ export function estadoInicial(): Estado {
     calendario: calendario2026(),
     disciplinas: [],
     periodosTurma: [],
+    ausencias: [],
     catalogo: CATALOGO_BASE,
   };
 }

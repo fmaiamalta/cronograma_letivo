@@ -124,6 +124,14 @@ export interface Disciplina {
   modulos: Modulo[];
 }
 
+/**
+ * Dias em que o professor não dá aulas (greve, doença, formação). Valem para
+ * todas as disciplinas; no profissional, os módulos passam para as aulas seguintes.
+ */
+export interface Ausencia extends Periodo {}
+
+export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Outro'];
+
 /** Períodos em que a turma inteira não tem aulas (FCT, intercâmbio). */
 export interface PeriodoTurma extends Periodo {
   turma: string;
@@ -134,6 +142,8 @@ export interface Estado {
   calendario: CalendarioEscolar;
   disciplinas: Disciplina[];
   periodosTurma: PeriodoTurma[];
+  /** Sem valor em dados antigos. */
+  ausencias?: Ausencia[];
   catalogo: EntradaCatalogo[];
 }
 

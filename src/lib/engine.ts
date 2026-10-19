@@ -1,5 +1,5 @@
 import { addDays, inRange, weekday } from './dates';
-import { ensinoDe, fimDoAno, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
+import { ensinoDe, fimDoAno, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
 
 export interface DiaDeAula {
   data: ISODate;
@@ -49,10 +49,12 @@ export function motivoSemAula(
   turma: string,
   periodosTurma: PeriodoTurma[],
   diasSemAula: ISODate[] = [],
+  ausencias: Ausencia[] = [],
 ): string | null {
   for (const i of cal.interrupcoes) if (inRange(data, i.inicio, i.fim)) return i.nome;
   for (const f of cal.feriados) if (f.data === data) return f.nome;
   for (const p of periodosTurma) if (p.turma === turma && inRange(data, p.inicio, p.fim)) return p.nome;
+  for (const a of ausencias) if (inRange(data, a.inicio, a.fim)) return a.nome;
   if (diasSemAula.includes(data)) return 'Sem aula';
   return null;
 }
@@ -65,14 +67,14 @@ export function limitesDisciplina(d: Disciplina, cal: CalendarioEscolar): { inic
   return { inicio, fim };
 }
 
-export function diasDeAula(d: Disciplina, cal: CalendarioEscolar, periodosTurma: PeriodoTurma[]): DiaDeAula[] {
+export function diasDeAula(d: Disciplina, cal: CalendarioEscolar, periodosTurma: PeriodoTurma[], ausencias: Ausencia[] = []): DiaDeAula[] {
   const { inicio, fim } = limitesDisciplina(d, cal);
   const dias: DiaDeAula[] = [];
   if (!d.tempos.some((t) => t > 0)) return dias;
   for (let data = inicio; data <= fim; data = addDays(data, 1)) {
     const tempos = d.tempos[weekday(data)] ?? 0;
     if (tempos <= 0) continue;
-    if (motivoSemAula(data, cal, d.turma, periodosTurma, d.diasSemAula)) continue;
+    if (motivoSemAula(data, cal, d.turma, periodosTurma, d.diasSemAula, ausencias)) continue;
     dias.push({ data, tempos });
   }
   return dias;
@@ -87,9 +89,11 @@ export function planear(
   cal: CalendarioEscolar,
   periodosTurma: PeriodoTurma[],
   hoje: ISODate,
+  ausencias: Ausencia[] = [],
 ): PlanoDisciplina {
   const { inicio, fim } = limitesDisciplina(d, cal);
-  const dias = diasDeAula(d, cal, periodosTurma);
+  // Um dia perdido (falta, greve) não apaga tempos: o módulo continua nas aulas seguintes.
+  const dias = diasDeAula(d, cal, periodosTurma, ausencias);
   const temposAno = dias.reduce((s, x) => s + x.tempos, 0);
   const modulos: PlanoModulo[] = d.modulos.map((modulo) => ({
     modulo,

@@ -1,13 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
-import { ehGeral, ENSINOS, ensinoDe, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
-import { fimDoMes, primeiroDoMes, trocos } from './Gantt';
+import { ehGeral, ENSINOS, ensinoDe, type Ausencia, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
+import { fimDoMes, primeiroDoMes, quebrasDe, trocos } from './Gantt';
 
 interface Props {
   calendario: CalendarioEscolar;
   planos: PlanoDisciplina[];
   periodosTurma: PeriodoTurma[];
+  ausencias: Ausencia[];
   hoje: ISODate;
   /** 1 = o ano inteiro cabe na largura do ecrã; 2, 3, ... = zoom. */
   zoom: number;
@@ -18,7 +19,7 @@ interface Props {
  * Cronograma para telemóvel: sem coluna de nomes (o nome vai por cima da
  * barra e acompanha o deslize lateral) e, por defeito, o ano inteiro no ecrã.
  */
-export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, onAbrir }: Props) {
+export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, hoje, zoom, onAbrir }: Props) {
   const caixa = useRef<HTMLDivElement>(null);
   const [larguraVisivel, setLarguraVisivel] = useState(360);
 
@@ -94,6 +95,9 @@ export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, o
             {calendario.interrupcoes.map((i) => (
               <div key={i.id} className="gantt-break" style={{ left: x(i.inicio), width: (diffDays(i.inicio, i.fim) + 1) * pxDia }} />
             ))}
+            {ausencias.map((a) => (
+              <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: Math.max(2, (diffDays(a.inicio, a.fim) + 1) * pxDia) }} />
+            ))}
             {calendario.feriados.map((f) => <div key={f.id} className="gantt-holiday" style={{ left: x(f.data) + pxDia / 2 }} />)}
             {hojeVisivel && <div className="gantt-today" style={{ left: x(hoje) + pxDia / 2 }} />}
           </div>
@@ -101,7 +105,7 @@ export function GanttCompacto({ calendario, planos, periodosTurma, hoje, zoom, o
           {planos.map((p, idx) => {
             const d = p.disciplina;
             const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
-            const quebras = [...calendario.interrupcoes, ...periodos];
+            const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula);
             return (
               <section key={d.id} style={{ ['--cor' as string]: d.cor }}>
                 {new Set(planos.map((x) => ensinoDe(x.disciplina))).size > 1 && (idx === 0 || ensinoDe(planos[idx - 1].disciplina) !== ensinoDe(d)) && (

@@ -124,3 +124,23 @@ describe('ensino geral (disciplina anual)', () => {
     expect(d5.inicio).toBe('2026-09-15');
   });
 });
+
+describe('faltas do professor', () => {
+  const cal = calendario2026();
+  const greve = { id: 'g', nome: 'Greve', inicio: '2026-09-21', fim: '2026-09-21' };
+
+  it('o módulo passa para a aula seguinte e acaba mais tarde', () => {
+    const sem = planear(disciplina({ modulos: [mod('A', 5), mod('B', 3)] }), cal, [], '2026-09-01');
+    const com = planear(disciplina({ modulos: [mod('A', 5), mod('B', 3)] }), cal, [], '2026-09-01', [greve]);
+    expect(com.modulos[0].sessoes.map((s) => s.data)).toEqual(['2026-09-16', '2026-09-23', '2026-09-28']);
+    expect(com.modulos[0].fim > sem.modulos[0].fim!).toBe(true);
+    expect(com.modulos[1].fim).toBe('2026-09-30');
+    expect(com.modulos[0].emFalta).toBe(0);
+  });
+
+  it('uma semana de baixa vale para todas as disciplinas', () => {
+    const baixa = { id: 'b', nome: 'Doença', inicio: '2026-10-05', fim: '2026-10-09' };
+    const dias = diasDeAula(disciplina({ tempos: [1, 1, 1, 1, 1, 0, 0] }), cal, [], [baixa]);
+    expect(dias.some((d) => d.data >= '2026-10-05' && d.data <= '2026-10-09')).toBe(false);
+  });
+});

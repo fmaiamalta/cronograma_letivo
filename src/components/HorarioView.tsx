@@ -4,6 +4,7 @@ import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodig
 import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { ANOS, COMPONENTES, ehGeral, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { Ausencias } from './Ausencias';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
@@ -113,6 +114,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
         );
       })}
 
+      <Ausencias estado={estado} atualizar={atualizar} />
       <PeriodosTurma estado={estado} turmas={turmas} atualizar={atualizar} />
     </div>
   );
@@ -267,7 +269,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
 
       <fieldset>
         <legend>Dias sem aula desta disciplina</legend>
-        <p className="muted small">Visitas de estudo, reuniões, provas, greves, ...</p>
+        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greves e doença: em Faltas do professor.</p>
         <div className="chips">
           {d.diasSemAula.map((x) => (
             <span key={x} className="chip">
