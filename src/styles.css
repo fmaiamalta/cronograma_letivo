@@ -216,12 +216,12 @@ legend { padding: 0 6px; font-weight: 600; font-size: 0.9rem; }
 
 .ausencias-lista { list-style: none; margin: 0 0 10px; padding: 0; }
 .ausencias-lista li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--grid); }
-.ausencias-form label { display: flex; align-items: center; gap: 6px; }
+.ausencias-form > * { width: auto; flex: 0 0 auto; }
+.ausencias.card .ausencias-form input[type='date'] { width: 160px; }
 @media (max-width: 760px) {
   .ausencias-form { display: grid; grid-template-columns: 1fr 1fr; align-items: end; }
   .ausencias-form select, .ausencias-form .btn { grid-column: 1 / -1; }
-  .ausencias-form label { flex-direction: column; align-items: stretch; gap: 2px; font-size: 0.8rem; color: var(--muted, #777); text-align: left; }
-  .ausencias-form input { width: 100%; min-width: 0; }
+  .ausencias-form > *, .ausencias.card .ausencias-form input[type='date'] { width: 100%; min-width: 0; }
 }
 .period-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) 150px 150px 34px; gap: 8px; align-items: center; margin-bottom: 8px; }
 .card .period-row:has(> :nth-child(4):last-child) { grid-template-columns: minmax(140px, 1fr) 150px 150px 34px; }

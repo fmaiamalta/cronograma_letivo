@@ -269,7 +269,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
 
       <fieldset>
         <legend>Dias sem aula desta disciplina</legend>
-        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greves e doença: em Faltas do professor.</p>
+        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greve e doença: em Dias sem aulas, no fim da página.</p>
         <div className="chips">
           {d.diasSemAula.map((x) => (
             <span key={x} className="chip">

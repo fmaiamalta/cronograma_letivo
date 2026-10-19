@@ -407,7 +407,7 @@ export default function App() {
             )}
             <p className="legend ajuda">
               {estado.calendario.interrupcoes.map((i) => `${i.nome} ${i.inicio.slice(8, 10)}/${i.inicio.slice(5, 7)}–${i.fim.slice(8, 10)}/${i.fim.slice(5, 7)}`).join(' | ')}
-              . Linhas finas: feriados.{(estado.ausencias ?? []).length > 0 && ' Riscado: faltas do professor.'}
+              . Linhas finas: feriados.{(estado.ausencias ?? []).length > 0 && ' Riscado: dias sem aulas.'}
             </p>
           </div>
         )}

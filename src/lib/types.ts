@@ -125,7 +125,7 @@ export interface Disciplina {
 }
 
 /**
- * Dias em que o professor não dá aulas (greve, doença, formação). Valem para
+ * Dias sem aulas em todas as disciplinas (greve, doença, formação). Valem para
  * todas as disciplinas; no profissional, os módulos passam para as aulas seguintes.
  */
 export interface Ausencia extends Periodo {}

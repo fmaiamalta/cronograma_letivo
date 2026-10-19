@@ -9,7 +9,7 @@ interface Props {
   atualizar: (f: (e: Estado) => Estado) => void;
 }
 
-/** Tempos de aula que a falta tira, somando todas as disciplinas. */
+/** Tempos de aula perdidos nesses dias, somando todas as disciplinas. */
 export function temposPerdidos(a: Pick<Ausencia, 'inicio' | 'fim'>, estado: Estado): number {
   let total = 0;
   for (const d of estado.disciplinas) {
@@ -23,7 +23,7 @@ export function temposPerdidos(a: Pick<Ausencia, 'inicio' | 'fim'>, estado: Esta
   return total;
 }
 
-/** Faltas do professor: greve, doença, formação. Partem a linha de todas as disciplinas. */
+/** Dias sem aulas em todas as disciplinas (greve, doença, formação). Partem a linha de todas. */
 export function Ausencias({ estado, atualizar }: Props) {
   const lista = [...(estado.ausencias ?? [])].sort((a, b) => a.inicio.localeCompare(b.inicio));
   const [motivo, setMotivo] = useState(MOTIVOS_AUSENCIA[0]);
@@ -41,7 +41,7 @@ export function Ausencias({ estado, atualizar }: Props) {
 
   return (
     <section className="card plain ausencias">
-      <h2>Faltas do professor</h2>
+      <h2>Dias sem aulas</h2>
       <p className="muted small">Greve, doença, formação. Em todas as disciplinas; no profissional, os módulos avançam.</p>
       {lista.length > 0 && (
         <ul className="ausencias-lista">
@@ -53,7 +53,7 @@ export function Ausencias({ estado, atualizar }: Props) {
                   <strong>{a.nome}</strong> {a.inicio === a.fim ? fmtLong(a.inicio) : `${fmtLong(a.inicio)} a ${fmtLong(a.fim)}`}
                   <small className="muted"> · {t} {t === 1 ? 'tempo' : 'tempos'}</small>
                 </span>
-                <button className="icon-btn" onClick={() => apagar(a.id)} aria-label={`Apagar falta de ${fmtLong(a.inicio)}`}><IconTrash /></button>
+                <button className="icon-btn" onClick={() => apagar(a.id)} aria-label={`Apagar ${a.nome} de ${fmtLong(a.inicio)}`}><IconTrash /></button>
               </li>
             );
           })}
@@ -63,9 +63,9 @@ export function Ausencias({ estado, atualizar }: Props) {
         <select value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo">
           {MOTIVOS_AUSENCIA.map((m) => <option key={m}>{m}</option>)}
         </select>
-        <label>De <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} aria-label="Primeiro dia" /></label>
-        <label>a <input type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} aria-label="Último dia (opcional)" /></label>
-        <button className="btn" disabled={!inicio} onClick={adicionar}>Adicionar falta</button>
+        <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} aria-label="Primeiro dia" />
+        <input type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} aria-label="Último dia (opcional)" />
+        <button className="btn" disabled={!inicio} onClick={adicionar}>Adicionar</button>
       </div>
     </section>
   );

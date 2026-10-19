@@ -14,7 +14,7 @@ export function HorarioLeitura({ planos, onAbrir, estado, atualizar }: {
   return (
     <div className="page">
       <h1>Horário</h1>
-      {/* No telemóvel também se marcam faltas (greve, doença): o cronograma acerta logo. */}
+      {/* No telemóvel também se marcam dias sem aulas (greve, doença): o cronograma acerta logo. */}
       <Ausencias estado={estado} atualizar={atualizar} />
       {planos.map((p) => {
         const d = p.disciplina;
