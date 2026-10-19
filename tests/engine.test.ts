@@ -133,7 +133,7 @@ describe('faltas do professor', () => {
     const sem = planear(disciplina({ modulos: [mod('A', 5), mod('B', 3)] }), cal, [], '2026-09-01');
     const com = planear(disciplina({ modulos: [mod('A', 5), mod('B', 3)] }), cal, [], '2026-09-01', [greve]);
     expect(com.modulos[0].sessoes.map((s) => s.data)).toEqual(['2026-09-16', '2026-09-23', '2026-09-28']);
-    expect(com.modulos[0].fim > sem.modulos[0].fim!).toBe(true);
+    expect(com.modulos[0].fim! > sem.modulos[0].fim!).toBe(true);
     expect(com.modulos[1].fim).toBe('2026-09-30');
     expect(com.modulos[0].emFalta).toBe(0);
   });
