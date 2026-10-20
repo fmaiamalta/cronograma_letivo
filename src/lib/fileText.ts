@@ -3,6 +3,7 @@
 
 import type { ItemPDF } from './pdfLayout';
 import { textoDeItens } from './pdfLayout';
+import type { Segmento } from './horarioPdf';
 
 export interface ConteudoFicheiro {
   texto: string;
@@ -35,6 +36,44 @@ async function itensDePDF(file: File): Promise<ItemPDF[]> {
     }
   }
   return itens;
+}
+
+/** Texto e traços (linhas da tabela) de cada página, para ler horários em grelha. */
+export async function paginasDePDF(file: File): Promise<{ itens: ItemPDF[]; segmentos: Segmento[] }[]> {
+  const pdfjs = await import('pdfjs-dist');
+  const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  const O = pdfjs.OPS;
+  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const out: { itens: ItemPDF[]; segmentos: Segmento[] }[] = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const itens: ItemPDF[] = [];
+    for (const item of (await page.getTextContent()).items) {
+      if (!('str' in item) || !item.str.trim()) continue;
+      itens.push({ x: item.transform[4], y: item.transform[5], w: item.width, s: item.str, p });
+    }
+    const segmentos: Segmento[] = [];
+    const ops = await page.getOperatorList();
+    ops.fnArray.forEach((f, i) => {
+      if (f !== O.constructPath) return;
+      const [cmds, a] = ops.argsArray[i] as [number[], number[]];
+      let k = 0, cx = 0, cy = 0;
+      for (const c of cmds) {
+        if (c === O.moveTo) { cx = a[k++]; cy = a[k++]; }
+        else if (c === O.lineTo) { const x = a[k++], y = a[k++]; segmentos.push({ x1: cx, y1: cy, x2: x, y2: y, p }); cx = x; cy = y; }
+        else if (c === O.rectangle) {
+          // Um retângulo dá os quatro lados; interessam os de cima e de baixo.
+          const [x, y, w, h] = a.slice(k, k + 4); k += 4;
+          segmentos.push({ x1: x, y1: y, x2: x + w, y2: y, p }, { x1: x, y1: y + h, x2: x + w, y2: y + h, p });
+        }
+        else if (c === O.curveTo) k += 6;
+        else if (c === O.curveTo2 || c === O.curveTo3) k += 4;
+      }
+    });
+    out.push({ itens, segmentos });
+  }
+  return out;
 }
 
 async function textoDeDOCX(file: File): Promise<string> {

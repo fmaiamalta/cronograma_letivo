@@ -73,7 +73,8 @@ function semAcentos(s: string): string {
 /** "Tecnologias da Informação e da Comunicação" → "TIC"; "PPM" fica "PPM". */
 export function sigla(nome: string): string {
   const palavras = semAcentos(nome).split(/[\s\-–·|]+/).filter(Boolean);
-  if (palavras.length === 1) return palavras[0].toUpperCase();
+  // Uma palavra só fica como está, sem pontos ("H.C.A." → "HCA").
+  if (palavras.length === 1) return palavras[0].replace(/\./g, '').toUpperCase();
   return palavras.filter((p) => !PEQUENAS.has(p.toLowerCase())).map((p) => p[0].toUpperCase()).join('');
 }
 
@@ -104,7 +105,10 @@ function nomeCombina(nomeDisciplina: string, titulo: string): boolean {
   if (!nomeDisciplina.trim()) return false;
   const a = semAcentos(nomeDisciplina).toLowerCase().trim();
   const b = semAcentos(titulo).toLowerCase().trim();
-  return a === b || sigla(nomeDisciplina) === sigla(titulo);
+  if (a === b || sigla(nomeDisciplina) === sigla(titulo)) return true;
+  // Abreviatura: "Hist." para "História".
+  const [curto, longo] = [a, b].map((x) => x.replace(/\./g, '')).sort((x, y) => x.length - y.length);
+  return curto.length >= 3 && !curto.includes(' ') && longo.split(' ')[0].startsWith(curto);
 }
 
 /** A disciplina do cronograma a que pertence um bloco do horário, se houver. */

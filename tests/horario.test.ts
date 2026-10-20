@@ -71,4 +71,12 @@ describe('horário do inforarios (.ics)', () => {
     expect(e.disciplinas[0].tempos).toEqual([0, 2, 0, 0, 0, 0, 0]);
     expect(e.horario?.blocos).toHaveLength(3);
   });
+
+  it('liga abreviaturas do Untis às disciplinas', () => {
+    const hca = disc('11A', 'História da Cultura e das Artes', 11);
+    const hist = disc('7A EQ', 'História', 7);
+    const b = (titulo: string, turma: string) => ({ id: titulo, dia: 0, inicio: '08:15', fim: '09:05', titulo, turmas: [turma] });
+    expect(disciplinaDoBloco(b('H.C.A.', '11A'), [hca, hist], [])?.nome).toBe('História da Cultura e das Artes');
+    expect(disciplinaDoBloco(b('Hist.', '7A EQ'), [hca, hist], [])?.nome).toBe('História');
+  });
 });

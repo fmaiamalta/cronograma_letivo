@@ -5,6 +5,7 @@ import { aplicarHorario, aulasSemDisciplina, disciplinaDoBloco, ehAula, gravarBl
 import type { Bloco, Estado, ISODate } from '../lib/types';
 import { Ausencias } from './Ausencias';
 import { BlocoForm } from './BlocoForm';
+import { blocosDaPagina } from '../lib/horarioPdf';
 
 interface Props {
   estado: Estado;
@@ -71,9 +72,33 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
     setEditar(false);
   };
 
+  const [aLer, setALer] = useState(false);
   const importar = async (f: File) => {
     setErro('');
-    const lidos = lerHorarioICS(await f.text());
+    let lidos: Bloco[] = [];
+    if (f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
+      setALer(true);
+      try {
+        const { paginasDePDF } = await import('../lib/fileText');
+        const paginas = await paginasDePDF(f);
+        if (!paginas.some((p) => p.itens.length)) {
+          setErro('PDF sem texto (digitalizado). Preencher à mão.');
+          return;
+        }
+        // Um PDF com vários professores: fica a primeira página com horário.
+        for (const p of paginas) {
+          lidos = blocosDaPagina(p.itens, p.segmentos);
+          if (lidos.length) break;
+        }
+      } catch (e) {
+        setErro(`Não foi possível ler o PDF: ${(e as Error).message}`);
+        return;
+      } finally {
+        setALer(false);
+      }
+    } else {
+      lidos = lerHorarioICS(await f.text());
+    }
     if (!lidos.length) {
       setErro('Sem aulas reconhecidas neste ficheiro.');
       return;
@@ -123,8 +148,8 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
 
   const importarBotao = (
     <label className={'btn' + (blocos.length ? '' : ' primary')}>
-      {blocos.length ? 'Importar outra vez' : 'Importar horário (.ics)'}
-      <input type="file" accept=".ics,text/calendar" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ''; }} />
+      {aLer ? 'A ler...' : blocos.length ? 'Importar outra vez' : 'Importar horário (.ics ou PDF)'}
+      <input type="file" accept=".ics,text/calendar,.pdf,application/pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); e.target.value = ''; }} />
     </label>
   );
 
@@ -149,7 +174,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
       <div className="page-head">
         <div>
           <h1>Horário</h1>
-          <p className="muted">{blocos.length ? `${intervaloSemana(segunda, dias)}` : 'Grelha semanal da escola, em ficheiro .ics (ex.: inforarios.pt).'}</p>
+          <p className="muted">{blocos.length ? `${intervaloSemana(segunda, dias)}` : 'Grelha semanal da escola: ficheiro .ics (ex.: inforarios.pt), PDF (ex.: Untis) ou à mão.'}</p>
         </div>
         <div className="row wrap">
           {!telemovel && blocos.length > 0 && setas}
