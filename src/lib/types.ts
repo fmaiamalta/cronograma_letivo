@@ -145,6 +145,8 @@ export interface Bloco {
   /** Sem turmas = não é aula (não conta tempos). */
   turmas: string[];
   sala?: string;
+  /** Bloco posto à mão: ligado diretamente a esta disciplina. */
+  disciplinaId?: string;
 }
 
 export interface HorarioSemanal {

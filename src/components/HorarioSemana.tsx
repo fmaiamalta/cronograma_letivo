@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { addDays, DIAS_SEMANA, weekday } from '../lib/dates';
+import { addDays, DIAS_SEMANA, uid, weekday } from '../lib/dates';
 import { motivoSemAula, type PlanoDisciplina } from '../lib/engine';
-import { aplicarHorario, aulasSemDisciplina, disciplinaDoBloco, ehAula, lerHorarioICS, minutos, nomeTurmas, sigla, temposDoHorario } from '../lib/horario';
+import { aplicarHorario, aulasSemDisciplina, disciplinaDoBloco, ehAula, gravarBlocos, lerHorarioICS, minutos, nomeTurmas, sigla, somarMinutos, temposDoHorario } from '../lib/horario';
 import type { Bloco, Estado, ISODate } from '../lib/types';
 import { Ausencias } from './Ausencias';
+import { BlocoForm } from './BlocoForm';
 
 interface Props {
   estado: Estado;
@@ -46,6 +47,29 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   const [segunda, setSegunda] = useState(() => segundaDe(hoje));
   const [pendente, setPendente] = useState<Pendente | null>(null);
   const [erro, setErro] = useState('');
+  // Edição à mão (só no computador): tocar num espaço vazio cria um bloco, tocar num bloco edita-o.
+  const [editar, setEditar] = useState(false);
+  const [form, setForm] = useState<{ bloco: Bloco; novo: boolean } | null>(null);
+  const [duracao, setDuracao] = useState(estado.calendario.minutosPorTempo);
+
+  const gravarBloco = (b: Bloco) => {
+    setDuracao(minutos(b.fim) - minutos(b.inicio));
+    atualizar((e) => {
+      const lista = e.horario?.blocos ?? [];
+      const nova = lista.some((x) => x.id === b.id) ? lista.map((x) => (x.id === b.id ? b : x)) : [...lista, b];
+      return gravarBlocos(e, nova.sort((x, y) => x.dia - y.dia || x.inicio.localeCompare(y.inicio)));
+    });
+    setForm(null);
+  };
+  const apagarBloco = (id: string) => {
+    atualizar((e) => gravarBlocos(e, (e.horario?.blocos ?? []).filter((x) => x.id !== id)));
+    setForm(null);
+  };
+  const apagarTudo = () => {
+    if (!confirm('Apagar o horário todo? Os tempos por dia das disciplinas ficam como estão.')) return;
+    atualizar((e) => ({ ...e, horario: undefined }));
+    setEditar(false);
+  };
 
   const importar = async (f: File) => {
     setErro('');
@@ -67,8 +91,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
 
   const dias = blocos.some((b) => b.dia === 5) ? 6 : 5;
   const datas = Array.from({ length: dias }, (_, i) => addDays(segunda, i));
-  const inicioMin = blocos.length ? Math.floor(Math.min(...blocos.map((b) => minutos(b.inicio))) / 60) * 60 : 8 * 60;
-  const fimMin = blocos.length ? Math.ceil(Math.max(...blocos.map((b) => minutos(b.fim))) / 60) * 60 : 18 * 60;
+  const comGrelha = blocos.length > 0 || editar;
+  // A editar, o dia inteiro (08:00 às 18:00, pelo menos), para haver onde pôr blocos novos.
+  const inicioMin = Math.min(...blocos.map((b) => Math.floor(minutos(b.inicio) / 60) * 60), blocos.length && !editar ? Infinity : 8 * 60);
+  const fimMin = Math.max(...blocos.map((b) => Math.ceil(minutos(b.fim) / 60) * 60), blocos.length && !editar ? -Infinity : 18 * 60);
   const pxMin = telemovel ? 0.95 : 1.15;
   const altura = (fimMin - inicioMin) * pxMin;
   const horas = Array.from({ length: (fimMin - inicioMin) / 60 + 1 }, (_, i) => inicioMin + i * 60);
@@ -79,6 +105,17 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
     const p = planos.find((x) => x.disciplina.id === dId);
     const pm = p?.modulos.find((m) => m.sessoes.some((s) => s.data === data));
     return pm?.modulo;
+  };
+
+  // Horas de início já usadas, para o novo bloco encaixar nos tempos da escola.
+  const inicios = [...new Set(blocos.map((b) => b.inicio))].sort();
+  const novoBloco = (dia: number, ev: React.MouseEvent<HTMLDivElement>) => {
+    const y = ev.clientY - ev.currentTarget.getBoundingClientRect().top;
+    const m = inicioMin + y / pxMin;
+    const perto = inicios.map((h) => minutos(h)).filter((h) => h <= m + 10).sort((a, b) => b - a)[0];
+    const ini = perto !== undefined && m - perto < duracao ? perto : Math.floor(m / 5) * 5;
+    const hhmm = `${String(Math.floor(ini / 60)).padStart(2, '0')}:${String(ini % 60).padStart(2, '0')}`;
+    setForm({ novo: true, bloco: { id: uid(), dia, inicio: hhmm, fim: somarMinutos(hhmm, duracao), titulo: '', turmas: [] } });
   };
 
   const agora = new Date();
@@ -116,7 +153,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
         </div>
         <div className="row wrap">
           {!telemovel && blocos.length > 0 && setas}
-          {!telemovel && importarBotao}
+          {!telemovel && comGrelha && (
+            <button className={'btn' + (editar ? ' primary' : '')} onClick={() => setEditar((x) => !x)}>{editar ? 'Concluir' : 'Editar'}</button>
+          )}
+          {!telemovel && !editar && importarBotao}
         </div>
       </div>
 
@@ -161,15 +201,25 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
         </section>
       )}
 
-      {!blocos.length && !pendente && (
+      {!comGrelha && !pendente && (
         <div className="empty">
           <p>Sem horário.</p>
-          <div className="row">{importarBotao}</div>
+          <div className="row">
+            {importarBotao}
+            {!telemovel && <button className="btn" onClick={() => setEditar(true)}>Preencher à mão</button>}
+          </div>
         </div>
       )}
 
-      {blocos.length > 0 && (
-        <div className="semana" style={{ ['--dias' as string]: dias }}>
+      {editar && (
+        <p className="small muted editar-ajuda">
+          Espaço vazio: novo bloco. Bloco: alterar ou apagar.
+          {blocos.length > 0 && <> <button className="link-btn small" onClick={apagarTudo}>Apagar o horário todo</button></>}
+        </p>
+      )}
+
+      {comGrelha && (
+        <div className={'semana' + (editar ? ' a-editar' : '')} style={{ ['--dias' as string]: dias }}>
           <div className="semana-cab">
             <span />
             {datas.map((d) => (
@@ -188,7 +238,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
             {datas.map((data, i) => {
               const passado = data < hoje;
               return (
-                <div key={data} className={'semana-col' + (data === hoje ? ' hoje' : '')}>
+                <div key={data} className={'semana-col' + (data === hoje ? ' hoje' : '')} onClick={editar ? (ev) => novoBloco(i, ev) : undefined}>
                   {horas.map((m) => <div key={m} className="semana-linha" style={{ top: (m - inicioMin) * pxMin }} />)}
                   {blocos.filter((b) => b.dia === i).map((b) => {
                     const d = ligacao.get(b.id);
@@ -210,8 +260,12 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                         className={'semana-bloco' + (ehAula(b) ? '' : ' outro') + (passado ? ' passado' : '') + (motivo ? ' sem-aula' : '')}
                         style={{ top, height: h, ['--cor' as string]: d?.cor ?? 'var(--border)' }}
                         title={titulo}
-                        disabled={!mod}
-                        onClick={() => d && mod && onAbrir(d.id, mod.id)}
+                        disabled={!editar && !mod}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          if (editar) setForm({ bloco: b, novo: false });
+                          else if (d && mod) onAbrir(d.id, mod.id);
+                        }}
                       >
                         <span className="sb-nome">{nome}</span>
                         {linha2 && <span className="sb-sub">{linha2}</span>}
@@ -229,6 +283,18 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
 
       {blocos.length > 0 && !telemovel && estado.horario?.origem && (
         <p className="small muted">De {estado.horario.origem}{estado.horario.importado ? `, importado a ${estado.horario.importado.split('-').reverse().join('/')}` : ''}.</p>
+      )}
+
+      {form && (
+        <BlocoForm
+          inicial={form.bloco}
+          novo={form.novo}
+          disciplinas={estado.disciplinas}
+          horas={inicios}
+          onGravar={gravarBloco}
+          onApagar={form.novo ? undefined : () => apagarBloco(form.bloco.id)}
+          onFechar={() => setForm(null)}
+        />
       )}
 
       <Ausencias estado={estado} atualizar={atualizar} />

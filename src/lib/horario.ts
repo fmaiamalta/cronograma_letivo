@@ -109,6 +109,7 @@ function nomeCombina(nomeDisciplina: string, titulo: string): boolean {
 
 /** A disciplina do cronograma a que pertence um bloco do horário, se houver. */
 export function disciplinaDoBloco(b: Bloco, disciplinas: Disciplina[], blocos: Bloco[]): Disciplina | undefined {
+  if (b.disciplinaId) return disciplinas.find((d) => d.id === b.disciplinaId);
   if (!ehAula(b)) return undefined;
   const mesmaTurma = disciplinas.filter((d) => turmaCombina(d.turma, b.turmas));
   const porNome = mesmaTurma.find((d) => nomeCombina(d.nome, b.titulo));
@@ -169,4 +170,15 @@ export function aplicarHorario(e: Estado, blocos: Bloco[], origem?: string, hoje
     horario: { blocos, origem, importado: hoje },
     disciplinas: disciplinas.map((d) => (tempos.has(d.id) ? { ...d, tempos: tempos.get(d.id)! } : d)),
   };
+}
+
+/** Grava blocos mudados à mão, mantendo a origem do horário, e acerta os tempos. */
+export function gravarBlocos(e: Estado, blocos: Bloco[]): Estado {
+  return aplicarHorario(e, blocos, e.horario?.origem, e.horario?.importado);
+}
+
+/** Hora (HH:MM) somada de minutos. */
+export function somarMinutos(hhmm: string, n: number): string {
+  const t = Math.min(23 * 60 + 55, minutos(hhmm) + n);
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 }

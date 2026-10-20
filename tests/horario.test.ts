@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { aplicarHorario, aulasSemDisciplina, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
+import { aplicarHorario, aulasSemDisciplina, gravarBlocos, somarMinutos, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
 import { estadoInicial } from '../src/lib/presets';
 import type { Disciplina } from '../src/lib/types';
 
@@ -57,5 +57,18 @@ describe('horário do inforarios (.ics)', () => {
     expect(e.disciplinas.map((d) => `${d.turma} ${d.ensino}`)).toContain('12H2H3 profissional');
     expect(e.disciplinas.find((d) => d.turma === 'D9A')).toMatchObject({ ano: 9, ensino: 'basico', tempos: [0, 0, 0, 1, 0, 0, 0] });
     expect(e.horario?.blocos).toHaveLength(25);
+  });
+
+  it('blocos postos à mão ligam-se pela disciplina escolhida e acertam os tempos', () => {
+    const e0 = { ...estadoInicial(), disciplinas: [disc('9A', '', 9)] };
+    const mao = [
+      { id: 'a', dia: 1, inicio: '08:15', fim: somarMinutos('08:15', 50), titulo: 'Qualquer', turmas: ['9A'], disciplinaId: '9A|' },
+      { id: 'b', dia: 1, inicio: '09:15', fim: '10:05', titulo: 'Qualquer', turmas: ['9A'], disciplinaId: '9A|' },
+      { id: 'c', dia: 2, inicio: '15:30', fim: '16:20', titulo: 'Reuniões', turmas: [] },
+    ];
+    const e = gravarBlocos(e0, mao);
+    expect(mao[0].fim).toBe('09:05');
+    expect(e.disciplinas[0].tempos).toEqual([0, 2, 0, 0, 0, 0, 0]);
+    expect(e.horario?.blocos).toHaveLength(3);
   });
 });

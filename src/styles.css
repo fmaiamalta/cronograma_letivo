@@ -623,3 +623,8 @@ section:first-of-type > .gc-ensino { border-top: 0; }
   .sb-sub, .sb-mod { font-size: 0.6rem; }
   .semana-dia strong { font-size: 1rem; }
 }
+.semana.a-editar .semana-col { cursor: copy; }
+.semana.a-editar .semana-col:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.semana.a-editar .semana-bloco { opacity: 1; cursor: pointer; outline: 1px dashed transparent; }
+.semana.a-editar .semana-bloco:hover { outline-color: var(--accent); }
+.editar-ajuda { margin: -6px 0 10px; }
