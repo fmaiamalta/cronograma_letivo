@@ -509,11 +509,20 @@ textarea.codigo {
 .gc-controls .icon-btn { width: 36px; height: 34px; }
 
 .gc {
-  flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+  flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
 }
-.gc-inner { position: relative; min-width: 100%; }
-.gc-head { position: sticky; top: 0; z-index: 6; height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.gc-head { position: sticky; top: 0; z-index: 6; height: 52px; overflow: hidden; background: var(--surface); border-bottom: 1px solid var(--border); }
+.gc-head-track { position: relative; height: 100%; will-change: transform; }
+.gc-corpo { position: relative; }
+/* Barras: só deslizam na horizontal. */
+.gc-x { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; }
+.gc-x::-webkit-scrollbar { display: none; }
+/* Nomes: camada por cima que não desliza para o lado; os toques passam para as barras. */
+.gc-rotulos { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+.gc-rotulos .gc-row { border-bottom-color: transparent; background: none; }
+.gc-oculto .gc-sticky { visibility: hidden; }
+.gc-oculto .gc-ensino, .gc-oculto .gc-group { background: var(--surface-2); }
 .gc-month {
   position: absolute; top: 4px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em; color: var(--muted);
   text-align: center; border-left: 1px solid var(--grid); overflow: hidden; white-space: nowrap;
@@ -532,7 +541,7 @@ textarea.codigo {
 .gc-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .gc-group { height: 20px; display: flex; align-items: center; background: var(--surface-2); border-left: 4px solid var(--cor); }
 .gc-sticky {
-  position: sticky; left: 0; z-index: 3; display: inline-block; max-width: 92vw; padding: 0 6px;
+  position: relative; z-index: 3; display: inline-block; max-width: 100%; padding: 0 6px; box-sizing: border-box;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .gc-group .gc-sticky { font-size: 0.72rem; font-weight: 700; background: var(--surface-2); border-radius: 3px; }
@@ -561,5 +570,5 @@ textarea.codigo {
 .gantt-group:first-child .gantt-ensino { border-top: 0; }
 .gc-ensino { position: relative; z-index: 2; border-top: 3px solid var(--text); background: var(--surface); padding: 2px 0; }
 .gc-ensino .gc-sticky { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-section:first-child > .gc-ensino { border-top: 0; }
+section:first-of-type > .gc-ensino { border-top: 0; }
 .dialog-form { display: flex; flex-direction: column; gap: 10px; }
