@@ -4,8 +4,8 @@ import { CatalogoView } from './components/CatalogoView';
 import { Gantt } from './components/Gantt';
 import { GanttCompacto } from './components/GanttCompacto';
 import { HorarioView } from './components/HorarioView';
-import { IconBook, IconCalendar, IconCheck, IconClock, IconTimeline } from './components/icons';
-import { HorarioLeitura } from './components/HorarioLeitura';
+import { IconBook, IconCalendar, IconCheck, IconClock, IconList, IconTimeline } from './components/icons';
+import { HorarioSemana } from './components/HorarioSemana';
 import { ModuloPanel } from './components/ModuloPanel';
 import { ContaDialog } from './components/ContaDialog';
 import { SyncDialog } from './components/SyncDialog';
@@ -14,6 +14,7 @@ import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
 import { TarefasView } from './components/TarefasView';
 import { todayISO } from './lib/dates';
 import { planear } from './lib/engine';
+import { temposDoHorario } from './lib/horario';
 import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
 import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } from './lib/sync';
@@ -22,11 +23,13 @@ import { aplicarPacote, codificar, descodificar } from './lib/transfer';
 import { useNuvem } from './lib/useNuvem';
 import { ensinoDe, type CalendarioEscolar, type Modulo } from './lib/types';
 
-type Separador = 'cronograma' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
+// 'semana' é a grelha do horário; 'horario' ficou com as disciplinas (o nome antigo do separador).
+type Separador = 'cronograma' | 'semana' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
 
 const SEPARADORES: { id: Separador; nome: string; Icone: () => JSX.Element }[] = [
   { id: 'cronograma', nome: 'Cronograma', Icone: IconTimeline },
-  { id: 'horario', nome: 'Horário', Icone: IconClock },
+  { id: 'semana', nome: 'Horário', Icone: IconClock },
+  { id: 'horario', nome: 'Disciplinas', Icone: IconList },
   { id: 'tarefas', nome: 'Tarefas', Icone: IconCheck },
   { id: 'calendario', nome: 'Calendário', Icone: IconCalendar },
   { id: 'catalogo', nome: 'Catálogo', Icone: IconBook },
@@ -69,7 +72,7 @@ export default function App() {
   const [dadosLink] = useState(() => (location.hash.includes('dados=') ? location.hash : ''));
   const { estado, atualizar, setEstado, gravado } = useEstado();
   const [sep, setSep] = useState<Separador>(() =>
-    estado.disciplinas.length || (typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches) ? 'cronograma' : 'horario',
+    estado.disciplinas.length || (typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches) ? 'cronograma' : 'semana',
   );
   const [pxDia, setPxDia] = useState<number>(() => lerPreferencia('cronograma.zoom', 3));
   // Telemóvel: 1 = ano inteiro no ecrã.
@@ -90,9 +93,14 @@ export default function App() {
   useEffect(() => gravarPreferencia('cronograma.zoom', pxDia), [pxDia]);
   useEffect(() => gravarPreferencia('cronograma.zoomTel', zoomTel), [zoomTel]);
 
+  // Com horário importado, os tempos por dia de cada disciplina saem da grelha.
+  const temposH = useMemo(
+    () => temposDoHorario(estado.horario?.blocos ?? [], estado.disciplinas, estado.calendario.minutosPorTempo),
+    [estado.horario, estado.disciplinas, estado.calendario.minutosPorTempo],
+  );
   const planos = useMemo(
-    () => estado.disciplinas.map((d) => planear(d, estado.calendario, estado.periodosTurma, hoje, estado.ausencias)),
-    [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje, estado.ausencias],
+    () => estado.disciplinas.map((d) => planear(temposH.has(d.id) ? { ...d, tempos: temposH.get(d.id)! } : d, estado.calendario, estado.periodosTurma, hoje, estado.ausencias)),
+    [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje, estado.ausencias, temposH],
   );
   const turmas = [...new Set(estado.disciplinas.map((d) => d.turma))].sort();
   // Agrupados por tipo de ensino (profissional, secundário, básico), mantendo a ordem do horário.
@@ -254,9 +262,9 @@ export default function App() {
   // A sincronização por Gist só aparece a quem já a tinha ligado.
   const gistLigado = !!(sync.token || sync.gistId);
 
-  const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'horario' || x.id === 'tarefas') : SEPARADORES;
+  const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'semana' || x.id === 'tarefas') : SEPARADORES;
   // No telemóvel não há Calendário nem Catálogo: mostra o cronograma.
-  const atual: Separador = telemovel && (sep === 'calendario' || sep === 'catalogo') ? 'cronograma' : sep;
+  const atual: Separador = !telemovel ? sep : sep === 'horario' ? 'semana' : sep === 'calendario' || sep === 'catalogo' ? 'cronograma' : sep;
 
   const fecharTransfer = () => {
     setTransfer(null);
@@ -380,7 +388,7 @@ export default function App() {
               ) : <div className="empty">
                 <p>Sem disciplinas no horário.</p>
                 <div className="row">
-                  <button className="btn primary" onClick={() => setSep('horario')}>Preencher o horário</button>
+                  <button className="btn primary" onClick={() => setSep('semana')}>Importar o horário</button>
                   <button className="btn" onClick={carregarExemplo}>Ver um exemplo</button>
                 </div>
               </div>
@@ -411,12 +419,11 @@ export default function App() {
             </p>
           </div>
         )}
+        {atual === 'semana' && (
+          <HorarioSemana estado={estado} planos={planos} hoje={hoje} telemovel={telemovel} atualizar={atualizar} onAbrir={(d, m) => setAberto({ d, m })} />
+        )}
         {atual === 'horario' && (
-          telemovel ? (
-            <HorarioLeitura planos={planos} onAbrir={(d, m) => setAberto({ d, m })} estado={estado} atualizar={atualizar} />
-          ) : (
-            <HorarioView estado={estado} planos={planos} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
-          )
+          <HorarioView estado={estado} planos={planos} temposHorario={temposH} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
         )}
         {atual === 'calendario' && <CalendarioView estado={estado} atualizar={atualizar} />}
         {atual === 'catalogo' && <CatalogoView estado={estado} atualizar={atualizar} />}

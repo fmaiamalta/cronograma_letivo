@@ -572,3 +572,54 @@ textarea.codigo {
 .gc-ensino .gc-sticky { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 section:first-of-type > .gc-ensino { border-top: 0; }
 .dialog-form { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- Horário semanal ---- */
+.semana-page { max-width: 1100px; }
+.semana-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.semana-page.com-nav > .page-head { display: none; }
+.zoom .semana-hoje { width: auto; padding: 0 10px; font-size: 0.85rem; }
+.semana { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 8px 12px 0; margin-bottom: 16px; }
+.semana-cab, .semana-corpo { display: grid; grid-template-columns: 46px repeat(var(--dias), minmax(0, 1fr)); }
+.semana-cab { margin-bottom: 6px; }
+.semana-dia { display: flex; flex-direction: column; align-items: center; padding: 4px 0; border-radius: 10px; margin: 0 3px; line-height: 1.15; }
+.semana-dia small { color: var(--muted); font-size: 0.78rem; }
+.semana-dia strong { font-size: 1.15rem; }
+.semana-dia.hoje { background: var(--text); color: var(--bg); }
+.semana-dia.hoje small { color: inherit; opacity: 0.8; }
+.semana-corpo { position: relative; }
+.semana-horas { position: relative; }
+.semana-horas span { position: absolute; right: 6px; transform: translateY(-50%); font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.semana-col { position: relative; border-left: 1px solid var(--grid); }
+.semana-col.hoje { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.semana-linha { position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid); }
+.semana-bloco {
+  position: absolute; left: 2px; right: 2px; display: block; overflow: hidden; text-align: left;
+  padding: 3px 5px; border: 0; border-left: 4px solid var(--cor); border-radius: 6px; cursor: pointer;
+  background: color-mix(in srgb, var(--cor) 16%, var(--surface-2)); color: var(--text); font: inherit; line-height: 1.2;
+}
+.semana-bloco:disabled { cursor: default; }
+.semana-bloco.outro { border-left-color: var(--border); background: var(--surface-2); }
+.semana-bloco.passado { opacity: 0.5; }
+.semana-bloco.sem-aula {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--warn) 18%, var(--surface-2)) 0 4px, var(--surface-2) 4px 8px);
+}
+.semana-bloco.sem-aula .sb-nome, .semana-bloco.sem-aula .sb-sub { text-decoration: line-through; opacity: 0.7; }
+.semana-bloco span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-nome { font-weight: 700; font-size: 0.85rem; }
+.sb-sub { font-size: 0.72rem; color: var(--muted); }
+.sb-mod { font-size: 0.68rem; font-weight: 600; color: var(--accent); }
+.semana-bloco.sem-aula .sb-mod { color: var(--warn); }
+.semana-agora { position: absolute; left: 0; right: 0; border-top: 2px solid var(--today); z-index: 2; pointer-events: none; }
+.importar-lista { list-style: none; padding: 0; margin: 6px 0 10px; }
+.importar-lista li { padding: 3px 0; font-size: 0.9rem; }
+.importar-lista .check-linha { display: flex; flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 0.9rem; }
+.semana-importar { justify-content: center; margin: 12px 0 4px; }
+@media (max-width: 760px) {
+  .semana { padding-right: 2px; }
+  .semana-cab, .semana-corpo { grid-template-columns: 34px repeat(var(--dias), minmax(0, 1fr)); }
+  .semana-horas span { right: 3px; font-size: 0.6rem; }
+  .semana-bloco { left: 1px; right: 1px; padding: 2px 3px; border-left-width: 3px; border-radius: 4px; }
+  .sb-nome { font-size: 0.72rem; }
+  .sb-sub, .sb-mod { font-size: 0.6rem; }
+  .semana-dia strong { font-size: 1rem; }
+}

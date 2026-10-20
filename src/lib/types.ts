@@ -132,6 +132,28 @@ export interface Ausencia extends Periodo {}
 
 export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Outro'];
 
+/** Um bloco do horário semanal (uma aula, uma reunião, ...). */
+export interface Bloco {
+  id: string;
+  /** 0 = segunda ... 6 = domingo */
+  dia: number;
+  /** "HH:MM" */
+  inicio: string;
+  fim: string;
+  /** Nome da disciplina ou da atividade ("Equipa TIC", "Reuniões"). */
+  titulo: string;
+  /** Sem turmas = não é aula (não conta tempos). */
+  turmas: string[];
+  sala?: string;
+}
+
+export interface HorarioSemanal {
+  blocos: Bloco[];
+  /** Nome do ficheiro importado. */
+  origem?: string;
+  importado?: ISODate;
+}
+
 /** Períodos em que a turma inteira não tem aulas (FCT, intercâmbio). */
 export interface PeriodoTurma extends Periodo {
   turma: string;
@@ -144,6 +166,8 @@ export interface Estado {
   periodosTurma: PeriodoTurma[];
   /** Sem valor em dados antigos. */
   ausencias?: Ausencia[];
+  /** Grelha semanal; os tempos de cada disciplina saem daqui quando há blocos dela. */
+  horario?: HorarioSemanal;
   catalogo: EntradaCatalogo[];
 }
 

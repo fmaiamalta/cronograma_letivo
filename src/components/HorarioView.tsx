@@ -4,20 +4,21 @@ import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodig
 import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { ANOS, COMPONENTES, ehGeral, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
-import { Ausencias } from './Ausencias';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
 interface Props {
   estado: Estado;
   planos: PlanoDisciplina[];
+  /** Tempos por dia que vêm do horário importado, por disciplina. */
+  temposHorario: Map<string, number[]>;
   aberta: string | null;
   setAberta: (id: string | null) => void;
   atualizar: (f: (e: Estado) => Estado) => void;
   onExemplo: () => void;
 }
 
-export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onExemplo }: Props) {
+export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, atualizar, onExemplo }: Props) {
   const turmas = [...new Set(estado.disciplinas.map((d) => d.turma).filter(Boolean))].sort();
 
   const novaDisciplina = () => {
@@ -59,7 +60,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
     <div className="page">
       <div className="page-head">
         <div>
-          <h1>Horário</h1>
+          <h1>Disciplinas</h1>
           <p className="muted">Uma entrada por disciplina e turma.</p>
         </div>
         <button className="btn primary" onClick={novaDisciplina}>+ Disciplina</button>
@@ -80,7 +81,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
       {estado.disciplinas.map((d, idx) => {
         const plano = planos.find((p) => p.disciplina.id === d.id);
         const aberto = aberta === d.id;
-        const semanal = d.tempos.reduce((a, b) => a + b, 0);
+        const semanal = (temposHorario.get(d.id) ?? d.tempos).reduce((a, b) => a + b, 0);
         return (
           <article key={d.id} className="card" style={{ ['--cor' as string]: d.cor }}>
             <header className="card-head" onClick={() => setAberta(aberto ? null : d.id)}>
@@ -88,7 +89,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
               <div className="grow">
                 <strong>{d.turma || 'Turma?'} | {d.nome || 'Disciplina sem nome'}</strong>
                 <small>
-                  {semanal} tempos/semana · {d.modulos.length} {d.modulos.length === 1 ? 'módulo' : 'módulos'}
+                  {semanal} {semanal === 1 ? 'tempo' : 'tempos'}/semana · {d.modulos.length} {d.modulos.length === 1 ? 'módulo' : 'módulos'}
                   {plano && plano.temposNecessarios > plano.temposDisponiveis && (
                     <span className="warn"> · faltam {plano.temposNecessarios - plano.temposDisponiveis} tempos</span>
                   )}
@@ -104,6 +105,7 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
               <EditorDisciplina
                 atualizar={atualizar}
                 d={d}
+                doHorario={temposHorario.get(d.id)}
                 estado={estado}
                 plano={plano}
                 mudar={(f) => mudar(d.id, f)}
@@ -114,15 +116,15 @@ export function HorarioView({ estado, planos, aberta, setAberta, atualizar, onEx
         );
       })}
 
-      <Ausencias estado={estado} atualizar={atualizar} />
       <PeriodosTurma estado={estado} turmas={turmas} atualizar={atualizar} />
     </div>
   );
 }
 
-function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
+function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualizar }: {
   atualizar: Props['atualizar'];
   d: Disciplina;
+  doHorario?: number[];
   estado: Estado;
   plano?: PlanoDisciplina;
   mudar: (f: (d: Disciplina) => Disciplina) => void;
@@ -236,14 +238,15 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
       </div>
 
       <fieldset>
-        <legend>Tempos de {mpt} min por dia</legend>
+        <legend>Tempos de {mpt} min por dia{doHorario && <small className="muted"> · do horário</small>}</legend>
         <div className="week">
           {DIAS_SEMANA.slice(0, 5).map((dia, i) => (
             <label key={dia}>
               {dia}
               <input
                 type="number" min={0} max={12} inputMode="numeric"
-                value={d.tempos[i] || ''} placeholder="0"
+                value={(doHorario ?? d.tempos)[i] || ''} placeholder="0"
+                disabled={!!doHorario}
                 onChange={(e) => {
                   const t = [...d.tempos];
                   t[i] = Math.max(0, Math.min(12, Number(e.target.value) || 0));
@@ -269,7 +272,7 @@ function EditorDisciplina({ d, estado, plano, mudar, apagar, atualizar }: {
 
       <fieldset>
         <legend>Dias sem aula desta disciplina</legend>
-        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greve e doença: em Dias sem aulas, no fim da página.</p>
+        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greve e doença: em Horário, Dias sem aulas.</p>
         <div className="chips">
           {d.diasSemAula.map((x) => (
             <span key={x} className="chip">
