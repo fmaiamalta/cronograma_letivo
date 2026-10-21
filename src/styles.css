@@ -630,3 +630,14 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .editar-ajuda { margin: -6px 0 10px; }
 .minutos-tempo { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .minutos-tempo select { width: auto; }
+.aula-detalhe { border-top: 6px solid var(--cor); }
+.aula-detalhe h2 { margin: 2px 0 0; font-size: 1.35rem; }
+.aula-quando { margin: 0; color: var(--muted); font-weight: 600; }
+.aula-sigla { margin: 2px 0 0; }
+.aula-dados { display: flex; gap: 32px; margin: 14px 0 6px; }
+.aula-dados dt { font-size: 0.85rem; color: var(--muted); }
+.aula-dados dd { margin: 0; font-size: 2rem; font-weight: 700; line-height: 1.15; }
+.aula-modulo { margin: 8px 0; }
+/* Datas da disciplina: a linha por baixo tem sempre a mesma altura, para as caixas ficarem alinhadas. */
+.grid-form label > small { display: flex; align-items: center; min-height: 26px; }
+.grid-form label > small .link-btn { padding: 0; }

@@ -23,6 +23,7 @@ interface Pendente {
   criar: Set<number>;
 }
 
+const DIAS_EXTENSO = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const MESES_EXTENSO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
 /** Segunda-feira da semana a mostrar; ao fim de semana, a seguinte. */
@@ -51,6 +52,8 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   // Edição à mão (só no computador): tocar num espaço vazio cria um bloco, tocar num bloco edita-o.
   const [editar, setEditar] = useState(false);
   const [form, setForm] = useState<{ bloco: Bloco; novo: boolean } | null>(null);
+  // Aula tocada fora da edição: dia, hora, turma e sala (como no horário da escola).
+  const [detalhe, setDetalhe] = useState<{ bloco: Bloco; data: ISODate } | null>(null);
   const [duracao, setDuracao] = useState(estado.calendario.minutosPorTempo);
 
   const gravarBloco = (b: Bloco) => {
@@ -285,11 +288,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                         className={'semana-bloco' + (ehAula(b) ? '' : ' outro') + (passado ? ' passado' : '') + (motivo ? ' sem-aula' : '')}
                         style={{ top, height: h, ['--cor' as string]: d?.cor ?? 'var(--border)' }}
                         title={titulo}
-                        disabled={!editar && !mod}
                         onClick={(ev) => {
                           ev.stopPropagation();
                           if (editar) setForm({ bloco: b, novo: false });
-                          else if (d && mod) onAbrir(d.id, mod.id);
+                          else setDetalhe({ bloco: b, data });
                         }}
                       >
                         <span className="sb-nome">{nome}</span>
@@ -309,6 +311,39 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
       {blocos.length > 0 && !telemovel && estado.horario?.origem && (
         <p className="small muted">De {estado.horario.origem}{estado.horario.importado ? `, importado a ${estado.horario.importado.split('-').reverse().join('/')}` : ''}.</p>
       )}
+
+      {detalhe && (() => {
+        const { bloco: b, data } = detalhe;
+        const d = ligacao.get(b.id);
+        const motivo = d
+          ? motivoSemAula(data, estado.calendario, d.turma, estado.periodosTurma, d.diasSemAula, estado.ausencias)
+          : ehAula(b) ? motivoSemAula(data, estado.calendario, '', [], [], estado.ausencias) : null;
+        const mod = d && !motivo ? moduloNoDia(d.id, data) : undefined;
+        const h = (x: string) => x.replace(':', 'h');
+        return (
+          <div className="sheet-backdrop center" onClick={() => setDetalhe(null)}>
+            <div className="dialog aula-detalhe" role="dialog" aria-modal="true" aria-label={b.titulo} onClick={(e) => e.stopPropagation()} style={{ ['--cor' as string]: d?.cor ?? 'var(--border)' }}>
+              <p className="aula-quando">{DIAS_EXTENSO[b.dia]}, {data.slice(8, 10)}/{data.slice(5, 7)} · {h(b.inicio)}–{h(b.fim)}</p>
+              <h2>{b.titulo}</h2>
+              {ehAula(b) && sigla(b.titulo) !== b.titulo && <p className="muted aula-sigla">{sigla(b.titulo)}</p>}
+              {(b.turmas.length > 0 || b.sala) && (
+                <dl className="aula-dados">
+                  {b.turmas.length > 0 && <div><dt>Turma</dt><dd>{nomeTurmas(b.turmas)}</dd></div>}
+                  {b.sala && <div><dt>Sala</dt><dd>{b.sala}</dd></div>}
+                </dl>
+              )}
+              {motivo && <p className="warn">Sem aula: {motivo}</p>}
+              {mod && !mod.anual && (
+                <p className="aula-modulo"><small className="muted">Neste dia</small><br />{mod.codigo ? `${mod.codigo} · ` : ''}{mod.nome}</p>
+              )}
+              <div className="row wrap end">
+                {d && mod && <button className="btn" onClick={() => { setDetalhe(null); onAbrir(d.id, mod.id); }}>{mod.anual ? 'Ver disciplina' : 'Ver módulo'}</button>}
+                <button className="btn primary" onClick={() => setDetalhe(null)}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {form && (
         <BlocoForm
