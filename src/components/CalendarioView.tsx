@@ -188,7 +188,7 @@ export function CalendarioView({ estado, atualizar }: Props) {
         <div className="grid-form">
           <label>Ano letivo<input value={cal.anoLetivo} onChange={(e) => set('anoLetivo', e.target.value)} /></label>
           <label>Escola<input value={cal.escola} placeholder="Nome da escola" onChange={(e) => set('escola', e.target.value)} /></label>
-          <label>Minutos por tempo<input type="number" min={30} max={120} value={cal.minutosPorTempo} onChange={(e) => set('minutosPorTempo', Number(e.target.value) || 50)} /></label>
+          <label>Duração de um tempo (min)<input type="number" min={30} max={120} value={cal.minutosPorTempo} onChange={(e) => set('minutosPorTempo', Number(e.target.value) || 50)} /></label>
           <label>Início das aulas (profissional)<input type="date" value={cal.inicio} onChange={(e) => e.target.value && set('inicio', e.target.value)} /></label>
           <label>Início no básico
             <input type="date" value={cal.inicioPorEnsino?.basico ?? ''} onChange={(e) => set('inicioPorEnsino', { ...cal.inicioPorEnsino, basico: e.target.value || undefined })} />

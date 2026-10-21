@@ -144,3 +144,14 @@ describe('faltas do professor', () => {
     expect(dias.some((d) => d.data >= '2026-10-05' && d.data <= '2026-10-09')).toBe(false);
   });
 });
+
+describe('minutos que cada tempo conta', () => {
+  const cal = calendario2026();
+  it('aulas de 50 min que contam 60: 25 h são 25 tempos', () => {
+    const d50 = planear(disciplina({ modulos: [mod('A', 25, 'h')] }), cal, [], '2026-09-01');
+    const d60 = planear(disciplina({ minutosPorTempo: 60, modulos: [mod('A', 25, 'h')] }), cal, [], '2026-09-01');
+    expect(d50.modulos[0].totalTempos).toBe(30);
+    expect(d60.modulos[0].totalTempos).toBe(25);
+    expect(d60.modulos[0].fim! < d50.modulos[0].fim!).toBe(true);
+  });
+});

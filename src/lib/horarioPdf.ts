@@ -102,7 +102,7 @@ export function blocosDaPagina(itens: ItemPDF[], segmentos: Segmento[]): Bloco[]
       if (!tempos.length) continue;
       const b = blocoDoQuadrado(dentro, col.x0 + largura / 2);
       if (!b) continue;
-      blocos.push({ id: uid(), dia: col.dia, inicio: tempos[0].inicio, fim: tempos[tempos.length - 1].fim, ...b });
+      blocos.push({ id: uid(), dia: col.dia, inicio: tempos[0].inicio, fim: tempos[tempos.length - 1].fim, tempos: tempos.length, ...b });
     }
   }
   return blocos.sort((a, b) => a.dia - b.dia || a.inicio.localeCompare(b.inicio));

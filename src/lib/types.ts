@@ -119,6 +119,11 @@ export interface Disciplina {
   tempos: number[];
   inicio?: ISODate;
   fim?: ISODate;
+  /**
+   * Minutos que cada tempo conta para as horas dos módulos (ex.: aulas de 50 min
+   * que contam 60). Sem valor: a duração do tempo no calendário.
+   */
+  minutosPorTempo?: number;
   /** Dias concretos sem aula (visita de estudo, greve, reunião). */
   diasSemAula: ISODate[];
   modulos: Modulo[];
@@ -145,6 +150,8 @@ export interface Bloco {
   /** Sem turmas = não é aula (não conta tempos). */
   turmas: string[];
   sala?: string;
+  /** Tempos que o bloco ocupa, quando o ficheiro o diz (PDF); senão conta-se pela duração. */
+  tempos?: number;
   /** Bloco posto à mão: ligado diretamente a esta disciplina. */
   disciplinaId?: string;
 }
@@ -178,6 +185,11 @@ export function ensinoDe(d: { ensino?: Ensino }): Ensino {
 }
 
 /** Ensino geral (básico ou secundário): disciplina anual, sem módulos. */
+/** Minutos que um tempo desta disciplina conta para as horas dos módulos. */
+export function minutosDe(d: Pick<Disciplina, 'minutosPorTempo'>, cal: Pick<CalendarioEscolar, 'minutosPorTempo'>): number {
+  return d.minutosPorTempo ?? cal.minutosPorTempo;
+}
+
 export function ehGeral(d: { ensino?: Ensino }): boolean {
   return ensinoDe(d) !== 'profissional';
 }

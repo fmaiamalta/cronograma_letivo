@@ -130,7 +130,7 @@ export function temposDoHorario(blocos: Bloco[], disciplinas: Disciplina[], minu
     const d = disciplinaDoBloco(b, disciplinas, blocos);
     if (!d) continue;
     const t = out.get(d.id) ?? [0, 0, 0, 0, 0, 0, 0];
-    t[b.dia] += Math.max(1, Math.round((minutos(b.fim) - minutos(b.inicio)) / minutosPorTempo));
+    t[b.dia] += b.tempos ?? Math.max(1, Math.round((minutos(b.fim) - minutos(b.inicio)) / minutosPorTempo));
     out.set(d.id, t);
   }
   return out;

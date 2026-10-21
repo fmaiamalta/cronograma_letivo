@@ -1,5 +1,5 @@
 import { addDays, inRange, weekday } from './dates';
-import { ensinoDe, fimDoAno, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
+import { ensinoDe, fimDoAno, minutosDe, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
 
 export interface DiaDeAula {
   data: ISODate;
@@ -98,7 +98,7 @@ export function planear(
   const modulos: PlanoModulo[] = d.modulos.map((modulo) => ({
     modulo,
     // Disciplina anual (ensino geral): ocupa todas as aulas do ano.
-    totalTempos: modulo.anual ? temposAno : temposDoModulo(modulo, cal.minutosPorTempo),
+    totalTempos: modulo.anual ? temposAno : temposDoModulo(modulo, minutosDe(d, cal)),
     sessoes: [],
     dados: 0,
     emFalta: 0,

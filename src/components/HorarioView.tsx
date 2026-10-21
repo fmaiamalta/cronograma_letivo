@@ -3,7 +3,7 @@ import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
 import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
-import { ANOS, COMPONENTES, ehGeral, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { ANOS, COMPONENTES, ehGeral, minutosDe, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { IconDown, IconTrash, IconUp } from './icons';
 
@@ -132,7 +132,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
 }) {
   const [diaSemAula, setDiaSemAula] = useState('');
   const [procura, setProcura] = useState('');
-  const mpt = estado.calendario.minutosPorTempo;
+  const mpt = minutosDe(d, estado.calendario);
   const set = <K extends keyof Disciplina>(k: K, v: Disciplina[K]) => mudar((x) => ({ ...x, [k]: v }));
 
   const mudarModulo = (id: string, f: (m: Modulo) => Modulo) =>
@@ -159,7 +159,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
    */
   const registar = (m: Pick<Modulo, 'codigo' | 'nome' | 'quantidade' | 'unidade'>) =>
     atualizar((e) => {
-      const nova = entradaParaModulo(e.catalogo, m, d.componente, e.calendario.minutosPorTempo);
+      const nova = entradaParaModulo(e.catalogo, m, d.componente, minutosDe(d, e.calendario));
       if (!nova) return e;
       const resto = nova.modulo ? e.catalogo : e.catalogo.filter((c) => !(c.modulo && c.nome.trim() === nova.nome));
       return { ...e, catalogo: juntarCatalogo(resto, [nova]) };
@@ -238,7 +238,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
       </div>
 
       <fieldset>
-        <legend>Tempos de {mpt} min por dia{doHorario && <small className="muted"> · do horário</small>}</legend>
+        <legend>Tempos por dia{doHorario && <small className="muted"> · do horário</small>}</legend>
         <div className="week">
           {DIAS_SEMANA.slice(0, 5).map((dia, i) => (
             <label key={dia}>
@@ -256,6 +256,19 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
             </label>
           ))}
         </div>
+        {!ehGeral(d) && (
+          <label className="minutos-tempo">Cada tempo conta
+            <select value={mpt} onChange={(e) => {
+              const v = Number(e.target.value);
+              set('minutosPorTempo', v === estado.calendario.minutosPorTempo ? undefined : v);
+            }}>
+              {[...new Set([45, 50, 60, 90, estado.calendario.minutosPorTempo, mpt])].sort((a, b) => a - b).map((n) => (
+                <option key={n} value={n}>{n} min</option>
+              ))}
+            </select>
+            <small className="muted">25 h = {temposDoModulo({ quantidade: 25, unidade: 'h' }, mpt)} tempos</small>
+          </label>
+        )}
       </fieldset>
 
       <div className="grid-form">
@@ -314,7 +327,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
                   <option value="t">tempos</option>
                 </select>
                 <span className="mod-info">
-                  {m.unidade === 'h' && `${temposDoModulo(m, estado.calendario.minutosPorTempo)} tempos`}
+                  {m.unidade === 'h' && `${temposDoModulo(m, mpt)} tempos`}
                   {pm?.inicio && ` · ${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}`}
                 </span>
                 <div className="row">

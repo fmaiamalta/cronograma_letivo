@@ -628,3 +628,5 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .semana.a-editar .semana-bloco { opacity: 1; cursor: pointer; outline: 1px dashed transparent; }
 .semana.a-editar .semana-bloco:hover { outline-color: var(--accent); }
 .editar-ajuda { margin: -6px 0 10px; }
+.minutos-tempo { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.minutos-tempo select { width: auto; }
