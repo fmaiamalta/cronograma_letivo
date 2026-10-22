@@ -641,3 +641,7 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 /* Datas da disciplina: a linha por baixo tem sempre a mesma altura, para as caixas ficarem alinhadas. */
 .grid-form label > small { display: flex; align-items: center; min-height: 26px; }
 .grid-form label > small .link-btn { padding: 0; }
+.creditos { margin: 0; font-size: 0.75rem; color: var(--muted); }
+.menu-pop .creditos { padding: 8px 12px 4px; margin-top: 4px; border-top: 1px solid var(--border); }
+.rodape { text-align: center; padding: 8px 16px 24px; }
+.menu-pop label { flex-direction: row; color: var(--text); font-size: inherit; }

@@ -316,6 +316,7 @@ export default function App() {
               <input type="file" hidden accept=".json,application/json" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) importarCopia(f); }} />
             </label>
             {!telemovel && <button onClick={() => { setSep('cronograma'); setTimeout(() => window.print(), 100); }}>Imprimir ou guardar PDF</button>}
+            <p className="creditos">Desenvolvido por Spiga</p>
           </div>
         </details>
       </header>
@@ -435,6 +436,7 @@ export default function App() {
             onNova={() => setFormTarefa({})}
             onEditar={(dId, mId, tarefa) => setFormTarefa({ inicial: { dId, mId, tarefa } })}
           />}
+        {!telemovel && <footer className="creditos rodape">Desenvolvido por Spiga</footer>}
       </main>
 
       {planoAberto && pmAberto && (

@@ -45,3 +45,7 @@ npm run build
 
 - iPhone (Safari): Partilhar, depois "Adicionar ao ecrã principal".
 - Android (Chrome): menu, depois "Instalar app".
+
+---
+
+Desenvolvido por Spiga.
