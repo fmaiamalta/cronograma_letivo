@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// No GitHub Pages a app fica em /cronograma_letivo/. Em local, na raiz.
+// A app fica na raiz (cronograma.spiga.pt). CRONOGRAMA_BASE permite mudar isso.
 const base = process.env.CRONOGRAMA_BASE ?? '/';
 
 export default defineConfig({
