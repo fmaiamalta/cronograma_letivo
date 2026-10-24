@@ -4,7 +4,7 @@ PWA para professores do ensino básico, secundário e profissional. Cada profess
 (turmas, tempos por dia, UC por ordem) e a app gera o cronograma do ano, com as
 interrupções letivas, os feriados e os períodos de FCT de cada turma.
 
-Publicada em `https://fmaiamalta.github.io/cronograma_letivo/`. Cada push para `main` volta a publicar (ver `.github/workflows/deploy.yml`).
+Publicada em `https://cronograma.spiga.pt/`. Cada push para `main` volta a publicar (ver `.github/workflows/deploy.yml`).
 
 ## O que faz
 

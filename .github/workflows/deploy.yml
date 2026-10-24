@@ -27,7 +27,7 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          CRONOGRAMA_BASE: /cronograma_letivo/
+          CRONOGRAMA_BASE: /
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
