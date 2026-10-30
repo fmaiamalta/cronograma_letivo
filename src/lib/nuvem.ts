@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { NUVEM } from './nuvem.config';
 import { aplicarPacote } from './transfer';
-import type { Estado } from './types';
+import { migrarDiasSemAula, type Estado } from './types';
 
 // Sincronização por conta (e-mail): uma linha por professor na tabela
 // "cronogramas", com o estado inteiro em JSON e a data da última gravação.
@@ -80,5 +80,6 @@ export async function gravar(e: Estado, anterior: string | undefined): Promise<s
  * tarefa marcada como feita aqui continua feita.
  */
 export function fundir(local: Estado, remoto: Estado): Estado {
-  return { ...local, ...remoto, disciplinas: aplicarPacote(local, remoto).disciplinas };
+  const r = migrarDiasSemAula(remoto);
+  return { ...local, ...r, disciplinas: aplicarPacote(local, r).disciplinas };
 }

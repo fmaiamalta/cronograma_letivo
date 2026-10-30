@@ -136,7 +136,6 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
   mudar: (f: (d: Disciplina) => Disciplina) => void;
   apagar: () => void;
 }) {
-  const [diaSemAula, setDiaSemAula] = useState('');
   const [procura, setProcura] = useState('');
   const mpt = minutosDe(d, estado.calendario);
   // Aulas com dia e hora: fazem o horário e dão os tempos por dia.
@@ -341,25 +340,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
         </label>
       </div>
 
-      <fieldset>
-        <legend>Dias sem aula desta disciplina</legend>
-        <p className="muted small">Visitas de estudo, reuniões, provas, ... Greve, doença, consulta: em Sem aulas.</p>
-        <div className="chips">
-          {d.diasSemAula.map((x) => (
-            <span key={x} className="chip">
-              {fmtLong(x)}
-              <button onClick={() => set('diasSemAula', d.diasSemAula.filter((y) => y !== x))} aria-label={`Remover ${fmtLong(x)}`}>✕</button>
-            </span>
-          ))}
-        </div>
-        <div className="row">
-          <input type="date" value={diaSemAula} onChange={(e) => setDiaSemAula(e.target.value)} aria-label="Dia sem aula" />
-          <button className="btn" disabled={!diaSemAula} onClick={() => {
-            if (!d.diasSemAula.includes(diaSemAula)) set('diasSemAula', [...d.diasSemAula, diaSemAula].sort());
-            setDiaSemAula('');
-          }}>Adicionar dia</button>
-        </div>
-      </fieldset>
+      <p className="small muted">Visitas de estudo, provas, greve, doença: em Sem aulas.</p>
 
       {geral && plano && (
         <p className="small muted">

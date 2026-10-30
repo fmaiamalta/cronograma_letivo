@@ -151,7 +151,7 @@ export function tiraODia(a: Ausencia, disciplinaId?: string): boolean {
   return !a.disciplinaId || (a.disciplinaId === disciplinaId && !a.tempos);
 }
 
-export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Outro'];
+export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Visita de estudo', 'Prova', 'Reunião', 'Outro'];
 
 /** Aula semanal de uma disciplina: dia, hora de início e tempos seguidos. */
 export interface Aula {
@@ -236,4 +236,21 @@ export function ehGeral(d: { ensino?: Ensino }): boolean {
 /** Fim das aulas de um ano; se o calendário não o tiver, o mais tardio dos que tem. */
 export function fimDoAno(cal: { fimPorAno: Partial<Record<Ano, ISODate>> }, ano: Ano): ISODate {
   return cal.fimPorAno[ano] ?? Object.values(cal.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!;
+}
+
+/**
+ * Dados antigos: os "dias sem aula desta disciplina" passam para Sem aulas,
+ * como ausências dessa disciplina (o dia todo). Pode correr várias vezes.
+ */
+export function migrarDiasSemAula(e: Estado): Estado {
+  if (!e.disciplinas.some((d) => d.diasSemAula?.length)) return e;
+  const novas: Ausencia[] = e.disciplinas.flatMap((d) =>
+    (d.diasSemAula ?? []).map((data) => ({ id: `dsa-${d.id}-${data}`, nome: 'Sem aula', inicio: data, fim: data, disciplinaId: d.id })),
+  );
+  const ids = new Set((e.ausencias ?? []).map((a) => a.id));
+  return {
+    ...e,
+    ausencias: [...(e.ausencias ?? []), ...novas.filter((a) => !ids.has(a.id))],
+    disciplinas: e.disciplinas.map((d) => (d.diasSemAula?.length ? { ...d, diasSemAula: [] } : d)),
+  };
 }

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { addDays, weekday } from '../src/lib/dates';
 import { diasDeAula, planear, temposDoModulo } from '../src/lib/engine';
 import { calendario2026 } from '../src/lib/presets';
-import type { Disciplina, Modulo } from '../src/lib/types';
+import { migrarDiasSemAula, type Disciplina, type Modulo } from '../src/lib/types';
+import { estadoInicial } from '../src/lib/presets';
 
 const mod = (id: string, quantidade: number, unidade: 'h' | 't' = 't'): Modulo => ({ id, nome: id, quantidade, unidade, tarefas: [] });
 
@@ -168,5 +169,18 @@ describe('sem aula numa só disciplina', () => {
   it('a ausência de outra disciplina não mexe nesta', () => {
     const outra = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [{ id: 'c', nome: 'Consulta', inicio: '2026-09-21', fim: '2026-09-21', disciplinaId: 'outra' }]);
     expect(outra.modulos[0].fim).toBe('2026-09-23');
+  });
+});
+
+describe('dias sem aula antigos', () => {
+  it('passam para Sem aulas, como ausências dessa disciplina, e o plano não muda', () => {
+    const cal = calendario2026();
+    const d = disciplina({ diasSemAula: ['2026-09-21'], modulos: [mod('A', 6)] });
+    const antes = planear(d, cal, [], '2026-09-01');
+    const e = migrarDiasSemAula({ ...estadoInicial(), calendario: cal, disciplinas: [d] });
+    expect(e.disciplinas[0].diasSemAula).toEqual([]);
+    expect(e.ausencias).toEqual([{ id: 'dsa-d1-2026-09-21', nome: 'Sem aula', inicio: '2026-09-21', fim: '2026-09-21', disciplinaId: 'd1' }]);
+    expect(planear(e.disciplinas[0], cal, [], '2026-09-01', e.ausencias).modulos[0].fim).toBe(antes.modulos[0].fim);
+    expect(migrarDiasSemAula(e)).toBe(e);
   });
 });

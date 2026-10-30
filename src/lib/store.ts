@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { estadoInicial } from './presets';
-import type { CalendarioEscolar, Estado } from './types';
+import { migrarDiasSemAula, type CalendarioEscolar, type Estado } from './types';
 
 const CHAVE = 'cronograma.v1';
 
@@ -10,7 +10,7 @@ export function carregar(): Estado {
     if (raw) {
       const e = JSON.parse(raw) as Estado;
       if (e?.versao === 1 && e.calendario && Array.isArray(e.disciplinas)) {
-        return { ...estadoInicial(), ...e };
+        return migrarDiasSemAula({ ...estadoInicial(), ...e });
       }
     }
   } catch {
@@ -41,7 +41,7 @@ export function useEstado() {
 export function validarEstado(x: unknown): Estado | null {
   const e = x as Estado;
   if (!e || e.versao !== 1 || !e.calendario || !Array.isArray(e.disciplinas)) return null;
-  return { ...estadoInicial(), ...e };
+  return migrarDiasSemAula({ ...estadoInicial(), ...e });
 }
 
 // Partilha do calendário escolar por link: o JSON vai no fragmento (#cal=...),

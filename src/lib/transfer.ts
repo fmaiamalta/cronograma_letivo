@@ -1,4 +1,4 @@
-import type { Estado } from './types';
+import { migrarDiasSemAula, type Estado } from './types';
 
 // Passagem de dados do computador para o telemóvel, sem servidor: o horário,
 // o calendário e as tarefas vão comprimidos num código (ou num link #dados=...).
@@ -59,6 +59,10 @@ export function linkDados(codigo: string, base = location.href.split('#')[0]): s
  * marcada como feita neste aparelho continua feita.
  */
 export function aplicarPacote(local: Estado, p: Pacote): Estado {
+  return migrarDiasSemAula(aplicarPacote0(local, p));
+}
+
+function aplicarPacote0(local: Estado, p: Pacote): Estado {
   const feitas = new Set(local.disciplinas.flatMap((d) => d.modulos.flatMap((m) => m.tarefas.filter((t) => t.feita).map((t) => t.id))));
   return {
     ...local,
