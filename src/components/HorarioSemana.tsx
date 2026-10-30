@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { addDays, DIAS_SEMANA, weekday } from '../lib/dates';
+import { addDays, DIAS_SEMANA, uid, weekday } from '../lib/dates';
 import { motivoSemAula, type PlanoDisciplina } from '../lib/engine';
 import { blocosDoEstado, ehAula, faixas, minutos, nomeTurmas, sigla } from '../lib/horario';
-import type { Bloco, Estado, ISODate } from '../lib/types';
-import { Ausencias } from './Ausencias';
+import { MOTIVOS_AUSENCIA, type Ausencia, type Bloco, type Estado, type ISODate } from '../lib/types';
+import { EscolherMotivo, nomeDoMotivo } from './Ausencias';
 
 interface Props {
   estado: Estado;
@@ -40,6 +40,9 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   const [segunda, setSegunda] = useState(() => segundaDe(hoje));
   // Aula tocada: dia, hora, turma e sala (como no horário da escola).
   const [detalhe, setDetalhe] = useState<{ bloco: Bloco; data: ISODate } | null>(null);
+  // "Não houve aula", no cartão da aula.
+  const [marcar, setMarcar] = useState<{ motivo: string; outro: string; todos: boolean } | null>(null);
+  const fecharDetalhe = () => { setDetalhe(null); setMarcar(null); };
 
   const dias = blocos.some((b) => b.dia === 5) ? 6 : 5;
   const datas = Array.from({ length: dias }, (_, i) => addDays(segunda, i));
@@ -55,6 +58,39 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
     const p = planos.find((x) => x.disciplina.id === dId);
     const pm = p?.modulos.find((m) => m.sessoes.some((s) => s.data === data));
     return pm?.modulo;
+  };
+
+  /** Tempos desta disciplina neste dia, por ordem (para saber quais se perderam). */
+  const blocosDoDia = (dId: string, dia: number) => blocos.filter((x) => x.disciplinaId === dId && x.dia === dia);
+
+  /** Porque não há aula neste bloco nesta data: o dia todo, ou só alguns tempos da disciplina. */
+  const semAula = (b: Bloco, data: ISODate): { motivo: string; ausencia?: Ausencia } | null => {
+    const d = ligacao.get(b.id);
+    const dia = d
+      ? motivoSemAula(data, estado.calendario, d.turma, estado.periodosTurma, d.diasSemAula, estado.ausencias, d.id)
+      : ehAula(b) ? motivoSemAula(data, estado.calendario, '', [], [], estado.ausencias) : null;
+    if (dia) return { motivo: dia, ausencia: (estado.ausencias ?? []).find((a) => d && a.disciplinaId === d.id && !a.tempos && a.inicio === data) };
+    if (!d) return null;
+    const meus = blocosDoDia(d.id, b.dia);
+    for (const a of estado.ausencias ?? []) {
+      if (a.disciplinaId !== d.id || !a.tempos || a.inicio !== data) continue;
+      const i = Math.max(0, meus.findIndex((x) => x.inicio >= (a.hora ?? '00:00')));
+      if (meus.slice(i, i + a.tempos).some((x) => x.id === b.id)) return { motivo: a.nome, ausencia: a };
+    }
+    return null;
+  };
+
+  const gravarSemAula = () => {
+    if (!detalhe || !marcar) return;
+    const { bloco: b, data } = detalhe;
+    const d = ligacao.get(b.id);
+    if (!d) return;
+    const n = blocosDoDia(d.id, b.dia).length;
+    const nova: Ausencia = marcar.todos || n === 1
+      ? { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id }
+      : { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id, tempos: 1, hora: b.inicio };
+    atualizar((e) => ({ ...e, ausencias: [...(e.ausencias ?? []), nova] }));
+    fecharDetalhe();
   };
 
   const agora = new Date();
@@ -120,9 +156,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                   {horas.map((m) => <div key={m} className="semana-linha" style={{ top: (m - inicioMin) * pxMin }} />)}
                   {blocos.filter((b) => b.dia === i).map((b) => {
                     const d = ligacao.get(b.id);
-                    const motivo = d
-                      ? motivoSemAula(data, estado.calendario, d.turma, estado.periodosTurma, d.diasSemAula, estado.ausencias)
-                      : ehAula(b) ? motivoSemAula(data, estado.calendario, '', [], [], estado.ausencias) : null;
+                    const motivo = semAula(b, data)?.motivo;
                     const mod = d && !motivo ? moduloNoDia(d.id, data) : undefined;
                     // Disciplina anual (ensino geral): o módulo é a própria disciplina, não vale a pena repetir.
                     const mostrarMod = mod && !mod.anual;
@@ -161,13 +195,13 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
       {detalhe && (() => {
         const { bloco: b, data } = detalhe;
         const d = ligacao.get(b.id);
-        const motivo = d
-          ? motivoSemAula(data, estado.calendario, d.turma, estado.periodosTurma, d.diasSemAula, estado.ausencias)
-          : ehAula(b) ? motivoSemAula(data, estado.calendario, '', [], [], estado.ausencias) : null;
+        const sa = semAula(b, data);
+        const motivo = sa?.motivo;
         const mod = d && !motivo ? moduloNoDia(d.id, data) : undefined;
+        const nDia = d ? blocosDoDia(d.id, b.dia).length : 0;
         const h = (x: string) => x.replace(':', 'h');
         return (
-          <div className="sheet-backdrop center" onClick={() => setDetalhe(null)}>
+          <div className="sheet-backdrop center" onClick={fecharDetalhe}>
             <div className="dialog aula-detalhe" role="dialog" aria-modal="true" aria-label={b.titulo} onClick={(e) => e.stopPropagation()} style={{ ['--cor' as string]: d?.cor ?? 'var(--border)' }}>
               <p className="aula-quando">{DIAS_EXTENSO[b.dia]}, {data.slice(8, 10)}/{data.slice(5, 7)} · {h(b.inicio)}–{h(b.fim)}</p>
               <h2>{b.titulo}</h2>
@@ -178,20 +212,44 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                   {b.sala && <div><dt>Sala</dt><dd>{b.sala}</dd></div>}
                 </dl>
               )}
-              {motivo && <p className="warn">Sem aula: {motivo}</p>}
+              {motivo && (
+                <p className="warn">Sem aula: {motivo}
+                  {sa?.ausencia && <> <button className="link-btn small" onClick={() => { atualizar((e) => ({ ...e, ausencias: (e.ausencias ?? []).filter((x) => x.id !== sa.ausencia!.id) })); fecharDetalhe(); }}>Anular</button></>}
+                </p>
+              )}
+              {marcar && d && (
+                <div className="nao-houve">
+                  <div className="row wrap">
+                    <EscolherMotivo motivo={marcar.motivo} outro={marcar.outro} onMotivo={(m) => setMarcar({ ...marcar, motivo: m })} onOutro={(t) => setMarcar({ ...marcar, outro: t })} />
+                  </div>
+                  {nDia > 1 && (
+                    <div className="seg" role="radiogroup" aria-label="Tempos">
+                      <button type="button" role="radio" aria-checked={!marcar.todos} className={!marcar.todos ? 'on' : ''} onClick={() => setMarcar({ ...marcar, todos: false })}>Só este tempo</button>
+                      <button type="button" role="radio" aria-checked={marcar.todos} className={marcar.todos ? 'on' : ''} onClick={() => setMarcar({ ...marcar, todos: true })}>Os {nDia} tempos do dia</button>
+                    </div>
+                  )}
+                </div>
+              )}
               {mod && !mod.anual && (
                 <p className="aula-modulo"><small className="muted">Neste dia</small><br />{mod.codigo ? `${mod.codigo} · ` : ''}{mod.nome}</p>
               )}
-              <div className="row wrap end">
-                {d && mod && <button className="btn" onClick={() => { setDetalhe(null); onAbrir(d.id, mod.id); }}>{mod.anual ? 'Ver disciplina' : 'Ver módulo'}</button>}
-                <button className="btn primary" onClick={() => setDetalhe(null)}>Fechar</button>
-              </div>
+              {marcar ? (
+                <div className="row wrap end">
+                  <button className="btn" onClick={() => setMarcar(null)}>Cancelar</button>
+                  <button className="btn primary" onClick={gravarSemAula}>Gravar</button>
+                </div>
+              ) : (
+                <div className="row wrap end">
+                  {d && !motivo && <button className="btn" onClick={() => setMarcar({ motivo: MOTIVOS_AUSENCIA[0], outro: '', todos: false })}>Não houve aula</button>}
+                  {d && mod && <button className="btn" onClick={() => { fecharDetalhe(); onAbrir(d.id, mod.id); }}>{mod.anual ? 'Ver disciplina' : 'Ver módulo'}</button>}
+                  <button className="btn primary" onClick={fecharDetalhe}>Fechar</button>
+                </div>
+              )}
             </div>
           </div>
         );
       })()}
 
-      <Ausencias estado={estado} atualizar={atualizar} />
     </div>
   );
 }

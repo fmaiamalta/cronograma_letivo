@@ -200,43 +200,84 @@ export function somarMinutos(hhmm: string, n: number): string {
 
 // ---- Horário construído em Disciplinas ----
 // Cada aula tem dia, início e tempos seguidos. Na grelha, cada tempo é um bloco
-// com a duração real da aula (ex.: 50 min); entre tempos seguidos há um
-// intervalo que não se mostra (ex.: tempo de 60 min = 50 de aula + 10).
+// com a duração real da aula (ex.: 50 min). O tempo seguinte começa na hora de
+// início de tempo da escola que vem a seguir (ex.: 10h05 → 10h25); sem essa
+// lista, 10 min depois (ex.: tempo de 60 min = 50 de aula + 10 de intervalo).
 
 export const INTERVALO = 10;
-
-/** Fim da aula: o último tempo acaba "duração" minutos depois de começar. */
-export function fimDaAula(a: Pick<Aula, 'inicio' | 'tempos'>, duracao: number): string {
-  return somarMinutos(a.inicio, a.tempos * duracao + (a.tempos - 1) * INTERVALO);
-}
+/** Maior intervalo entre dois tempos da mesma aula (ex.: o intervalo grande da manhã). */
+const INTERVALO_MAX = 30;
 
 function hhmmDe(m: number): string {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
-/** Blocos antigos (importados) desta disciplina, juntos em aulas de tempos seguidos. */
-function aulasDosBlocos(blocos: Bloco[], duracao: number): Aula[] {
+/** Início do tempo seguinte a um tempo que acaba em "fim" (minutos). */
+function proximoInicio(fim: number, horas: string[]): number {
+  const h = horas.map(minutos).find((x) => x >= fim && x <= fim + INTERVALO_MAX);
+  return h ?? fim + INTERVALO;
+}
+
+/** Hora de início de cada tempo de uma aula. */
+export function iniciosDosTempos(a: Pick<Aula, 'inicio' | 'tempos'>, duracao: number, horas: string[] = []): string[] {
+  const out = [minutos(a.inicio)];
+  for (let k = 1; k < a.tempos; k++) out.push(proximoInicio(out[k - 1] + duracao, horas));
+  return out.map(hhmmDe);
+}
+
+/** Fim da aula: o último tempo acaba "duração" minutos depois de começar. */
+export function fimDaAula(a: Pick<Aula, 'inicio' | 'tempos'>, duracao: number, horas: string[] = []): string {
+  const inicios = iniciosDosTempos(a, duracao, horas);
+  return somarMinutos(inicios[inicios.length - 1], duracao);
+}
+
+/** "8h15, 9:15 10h25" → ["08:15", "09:15", "10:25"] */
+export function lerHoras(texto: string): string[] {
+  const out = [...texto.matchAll(/(\d{1,2})\s*[h:.]\s*(\d{2})/g)].map((m) => `${m[1].padStart(2, '0')}:${m[2]}`);
+  return [...new Set(out)].sort();
+}
+
+/**
+ * Horas de início dos tempos da escola: as do calendário ou, sem elas, as das
+ * aulas e atividades já escritas (e de um horário importado antes).
+ */
+export function horasDosTempos(e: Pick<Estado, 'horario' | 'disciplinas' | 'calendario' | 'atividades'>): string[] {
+  if (e.calendario.horasTempos?.length) return e.calendario.horasTempos;
+  const todas = [
+    ...(e.horario?.blocos ?? []).map((b) => b.inicio),
+    ...e.disciplinas.flatMap((d) => (d.aulas ?? []).map((a) => a.inicio)),
+    ...(e.atividades ?? []).map((a) => a.inicio),
+  ];
+  return [...new Set(todas)].sort();
+}
+
+/** Blocos (importados) de uma disciplina, juntos em aulas de tempos seguidos. */
+function aulasDosBlocos(blocos: Bloco[], duracao: number, horas: string[]): Aula[] {
   const ord = [...blocos].sort((a, b) => a.dia - b.dia || a.inicio.localeCompare(b.inicio));
   const out: Aula[] = [];
   for (const b of ord) {
     const n = b.tempos ?? Math.max(1, Math.round((minutos(b.fim) - minutos(b.inicio)) / duracao));
     const ult = out[out.length - 1];
-    // Seguido da aula anterior (só o intervalo curto pelo meio): junta.
-    if (ult && ult.dia === b.dia && ult.sala === b.sala && minutos(b.inicio) === minutos(fimDaAula(ult, duracao)) + INTERVALO && n * duracao + (n - 1) * INTERVALO === minutos(b.fim) - minutos(b.inicio)) {
+    // Começa no tempo a seguir ao fim da aula anterior: é a mesma aula.
+    if (ult && ult.dia === b.dia && ult.sala === b.sala && minutos(b.inicio) === proximoInicio(minutos(fimDaAula(ult, duracao, horas)), horas)) {
       ult.tempos += n;
       continue;
     }
-    // Um bloco de vários tempos com intervalos irregulares fica como está, numa aula só.
     out.push({ id: b.id, dia: b.dia, inicio: b.inicio, tempos: n, sala: b.sala });
   }
   return out;
+}
+
+function horasDosBlocos(blocos: Bloco[]): string[] {
+  return [...new Set(blocos.map((b) => b.inicio))].sort();
 }
 
 /** Aulas da disciplina: as escritas em Disciplinas ou, em dados antigos, as do horário importado. */
 export function aulasDe(d: Disciplina, e: Pick<Estado, 'horario' | 'disciplinas' | 'calendario'>): Aula[] {
   if (d.aulas) return d.aulas;
   const blocos = e.horario?.blocos ?? [];
-  return aulasDosBlocos(blocos.filter((b) => disciplinaDoBloco(b, e.disciplinas, blocos)?.id === d.id), e.calendario.minutosPorTempo);
+  const horas = e.calendario.horasTempos?.length ? e.calendario.horasTempos : horasDosBlocos(blocos);
+  return aulasDosBlocos(blocos.filter((b) => disciplinaDoBloco(b, e.disciplinas, blocos)?.id === d.id), e.calendario.minutosPorTempo, horas);
 }
 
 /** Outras atividades: as escritas em Disciplinas ou, em dados antigos, os blocos importados sem disciplina. */
@@ -259,13 +300,13 @@ export function temposDasAulas(aulas: Aula[]): number[] | undefined {
 /** Grelha da semana: cada tempo de cada aula é um bloco; as atividades vão como estão. */
 export function blocosDoEstado(e: Pick<Estado, 'horario' | 'disciplinas' | 'calendario' | 'atividades'>): Bloco[] {
   const dur = e.calendario.minutosPorTempo;
+  const horas = horasDosTempos(e);
   const out: Bloco[] = [];
   for (const d of e.disciplinas) {
     for (const a of aulasDe(d, e)) {
-      for (let k = 0; k < a.tempos; k++) {
-        const ini = minutos(a.inicio) + k * (dur + INTERVALO);
-        out.push({ id: `${a.id}-${k}`, dia: a.dia, inicio: hhmmDe(ini), fim: hhmmDe(ini + dur), titulo: d.nome || d.turma, turmas: [d.turma], sala: a.sala, disciplinaId: d.id, tempos: 1 });
-      }
+      iniciosDosTempos(a, dur, horas).forEach((ini, k) => {
+        out.push({ id: `${a.id}-${k}`, dia: a.dia, inicio: ini, fim: somarMinutos(ini, dur), titulo: d.nome || d.turma, turmas: [d.turma], sala: a.sala, disciplinaId: d.id, tempos: 1 });
+      });
     }
   }
   for (const t of atividadesDe(e)) out.push({ id: t.id, dia: t.dia, inicio: t.inicio, fim: t.fim, titulo: t.nome, turmas: [], sala: t.sala });
@@ -274,24 +315,32 @@ export function blocosDoEstado(e: Pick<Estado, 'horario' | 'disciplinas' | 'cale
 
 /**
  * Importação (.ics ou PDF): cada disciplina fica com as suas aulas e o resto
- * vai para as outras atividades. Cria as disciplinas pedidas.
+ * vai para as outras atividades. Cria as disciplinas pedidas. As horas de
+ * início dos tempos ficam no calendário, se ainda lá não estiverem.
  */
 export function importarHorario(e: Estado, blocos: Bloco[], criar: { titulo: string; turmas: string[] }[] = []): Estado {
   const novas = criar.map((a, i) => disciplinaDoHorario(a, e.disciplinas.length + i));
   const disciplinas = [...e.disciplinas, ...novas];
   const dur = e.calendario.minutosPorTempo;
+  const horas = e.calendario.horasTempos?.length ? e.calendario.horasTempos : horasDosBlocos(blocos);
   const ligados = new Map(blocos.map((b) => [b.id, disciplinaDoBloco(b, disciplinas, blocos)]));
   return {
     ...e,
     horario: undefined,
+    calendario: { ...e.calendario, horasTempos: horas },
     disciplinas: disciplinas.map((d) => {
       const meus = blocos.filter((b) => ligados.get(b.id)?.id === d.id);
       if (!meus.length) return d;
-      const aulas = aulasDosBlocos(meus, dur);
+      const aulas = aulasDosBlocos(meus, dur, horas);
       return { ...d, aulas, tempos: temposDasAulas(aulas)! };
     }),
     atividades: blocos
       .filter((b) => !ligados.get(b.id))
       .map((b) => ({ id: b.id, nome: b.turmas.length ? `${b.titulo} · ${nomeTurmas(b.turmas)}` : b.titulo, dia: b.dia, inicio: b.inicio, fim: b.fim, sala: b.sala })),
   };
+}
+
+/** Tempos por dia da semana da disciplina: das aulas com hora ou, sem elas, os escritos à mão. */
+export function temposDaDisciplina(d: Disciplina, e: Pick<Estado, 'horario' | 'disciplinas' | 'calendario'>): number[] {
+  return temposDasAulas(aulasDe(d, e)) ?? d.tempos;
 }

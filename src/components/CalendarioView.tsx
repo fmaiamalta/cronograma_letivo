@@ -3,6 +3,7 @@ import { lerCalendario, type SugestaoCalendario } from '../lib/calendarParse';
 import { fmtLong, uid, weekday, DIAS_SEMANA } from '../lib/dates';
 import { lerFicheiro } from '../lib/fileText';
 import { calendario2026 } from '../lib/presets';
+import { horasDosTempos, lerHoras } from '../lib/horario';
 import { linkCalendario } from '../lib/store';
 import { ANOS, type Ano, type CalendarioEscolar, type Ensino, type Estado, type Feriado, type Periodo } from '../lib/types';
 import { IconTrash } from './icons';
@@ -24,6 +25,7 @@ function iniciosPorNivel(inicios: { data: string; nota: string }[]): Partial<Rec
 
 export function CalendarioView({ estado, atualizar }: Props) {
   const cal = estado.calendario;
+  const horasDasAulas = horasDosTempos({ ...estado, calendario: { ...cal, horasTempos: undefined } });
   const [aLer, setALer] = useState<string | null>(null);
   const [sugestao, setSugestao] = useState<
     (SugestaoCalendario & { escolhidas: Set<string>; ficheiro: string; inicioEscolhido?: string; substituir: boolean }) | null
@@ -189,6 +191,12 @@ export function CalendarioView({ estado, atualizar }: Props) {
           <label>Ano letivo<input value={cal.anoLetivo} onChange={(e) => set('anoLetivo', e.target.value)} /></label>
           <label>Escola<input value={cal.escola} placeholder="Nome da escola" onChange={(e) => set('escola', e.target.value)} /></label>
           <label>Duração de um tempo (min)<input type="number" min={30} max={120} value={cal.minutosPorTempo} onChange={(e) => set('minutosPorTempo', Number(e.target.value) || 50)} /></label>
+          <label className="span2">Início dos tempos
+            <input key={(cal.horasTempos ?? []).join()} defaultValue={(cal.horasTempos ?? []).map((h) => h.replace(':', 'h')).join(', ')}
+              placeholder={horasDasAulas.length ? horasDasAulas.map((h) => h.replace(':', 'h')).join(', ') : '8h15, 9h15, 10h25, 11h25, ...'}
+              onBlur={(e) => { const l = lerHoras(e.target.value); set('horasTempos', l.length ? l : undefined); }} />
+            <small className="muted">{cal.horasTempos?.length ? 'Uma aula de vários tempos segue estas horas.' : 'Vazio: as horas das aulas já escritas.'}</small>
+          </label>
           <label>Início das aulas (profissional)<input type="date" value={cal.inicio} onChange={(e) => e.target.value && set('inicio', e.target.value)} /></label>
           <label>Início no básico
             <input type="date" value={cal.inicioPorEnsino?.basico ?? ''} onChange={(e) => set('inicioPorEnsino', { ...cal.inicioPorEnsino, basico: e.target.value || undefined })} />

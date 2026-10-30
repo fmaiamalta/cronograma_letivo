@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
 import type { Ausencia, CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
-import { COMPONENTES, ehGeral, ENSINOS, ensinoDe } from '../lib/types';
+import { COMPONENTES, ehGeral, ENSINOS, ensinoDe, tiraODia } from '../lib/types';
 
 interface Props {
   calendario: CalendarioEscolar;
@@ -47,8 +47,8 @@ export function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate
 }
 
 /** Tudo o que parte a linha de uma disciplina: interrupções, períodos da turma, faltas e dias sem aula. */
-export function quebrasDe(cal: CalendarioEscolar, periodos: PeriodoTurma[], ausencias: Ausencia[], diasSemAula: ISODate[]): { inicio: ISODate; fim: ISODate }[] {
-  return [...cal.interrupcoes, ...periodos, ...ausencias, ...diasSemAula.map((d) => ({ inicio: d, fim: d }))];
+export function quebrasDe(cal: CalendarioEscolar, periodos: PeriodoTurma[], ausencias: Ausencia[], diasSemAula: ISODate[], disciplinaId?: string): { inicio: ISODate; fim: ISODate }[] {
+  return [...cal.interrupcoes, ...periodos, ...ausencias.filter((a) => tiraODia(a, disciplinaId)), ...diasSemAula.map((d) => ({ inicio: d, fim: d }))];
 }
 
 interface Etiqueta {
@@ -166,7 +166,7 @@ export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDi
                 <span>{i.nome}</span>
               </div>
             ))}
-            {ausencias.map((a) => (
+            {ausencias.filter((a) => !a.disciplinaId).map((a) => (
               <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: (diffDays(a.inicio, a.fim) + 1) * pxDia }} title={`${a.nome}: ${a.inicio === a.fim ? fmtLong(a.inicio) : `${fmtLong(a.inicio)} a ${fmtLong(a.fim)}`}`} />
             ))}
             {calendario.feriados.map((f) => (
@@ -178,7 +178,7 @@ export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDi
           {planos.map((p, idx) => {
             const d = p.disciplina;
             const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
-            const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula);
+            const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula, d.id);
             const comp = COMPONENTES.find((c) => c.id === d.componente)?.nome;
             const falta = p.temposNecessarios - p.temposDisponiveis;
             // Ensino geral: a disciplina é uma só linha, sem cabeçalho de grupo.

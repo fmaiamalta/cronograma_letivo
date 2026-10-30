@@ -1,5 +1,5 @@
 import { addDays, inRange, weekday } from './dates';
-import { ensinoDe, fimDoAno, minutosDe, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
+import { ensinoDe, fimDoAno, minutosDe, tiraODia, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
 
 export interface DiaDeAula {
   data: ISODate;
@@ -50,11 +50,12 @@ export function motivoSemAula(
   periodosTurma: PeriodoTurma[],
   diasSemAula: ISODate[] = [],
   ausencias: Ausencia[] = [],
+  disciplinaId?: string,
 ): string | null {
   for (const i of cal.interrupcoes) if (inRange(data, i.inicio, i.fim)) return i.nome;
   for (const f of cal.feriados) if (f.data === data) return f.nome;
   for (const p of periodosTurma) if (p.turma === turma && inRange(data, p.inicio, p.fim)) return p.nome;
-  for (const a of ausencias) if (inRange(data, a.inicio, a.fim)) return a.nome;
+  for (const a of ausencias) if (tiraODia(a, disciplinaId) && inRange(data, a.inicio, a.fim)) return a.nome;
   if (diasSemAula.includes(data)) return 'Sem aula';
   return null;
 }
@@ -74,8 +75,11 @@ export function diasDeAula(d: Disciplina, cal: CalendarioEscolar, periodosTurma:
   for (let data = inicio; data <= fim; data = addDays(data, 1)) {
     const tempos = d.tempos[weekday(data)] ?? 0;
     if (tempos <= 0) continue;
-    if (motivoSemAula(data, cal, d.turma, periodosTurma, d.diasSemAula, ausencias)) continue;
-    dias.push({ data, tempos });
+    if (motivoSemAula(data, cal, d.turma, periodosTurma, d.diasSemAula, ausencias, d.id)) continue;
+    // Só alguns tempos perdidos nesse dia (ex.: 1 dos 2): no profissional, o módulo avança só esses.
+    const perdidos = ausencias.filter((a) => a.disciplinaId === d.id && a.tempos && a.inicio === data).reduce((s, a) => s + a.tempos!, 0);
+    if (tempos - perdidos <= 0) continue;
+    dias.push({ data, tempos: tempos - perdidos });
   }
   return dias;
 }

@@ -27,3 +27,6 @@ export const IconCheck = () => (
 export const IconList = () => (
   <svg {...base}><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" /><circle cx="4.5" cy="12" r="1" /><circle cx="4.5" cy="18" r="1" /></svg>
 );
+export const IconSemAula = () => (
+  <svg {...base}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18M10 14l4 4M14 14l-4 4" /></svg>
+);

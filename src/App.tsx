@@ -4,7 +4,8 @@ import { CatalogoView } from './components/CatalogoView';
 import { Gantt } from './components/Gantt';
 import { GanttCompacto } from './components/GanttCompacto';
 import { HorarioView } from './components/HorarioView';
-import { IconBook, IconCalendar, IconCheck, IconClock, IconList, IconTimeline } from './components/icons';
+import { IconBook, IconCalendar, IconCheck, IconClock, IconList, IconSemAula, IconTimeline } from './components/icons';
+import { Ausencias } from './components/Ausencias';
 import { HorarioSemana } from './components/HorarioSemana';
 import { ModuloPanel } from './components/ModuloPanel';
 import { ContaDialog } from './components/ContaDialog';
@@ -24,12 +25,13 @@ import { useNuvem } from './lib/useNuvem';
 import { ensinoDe, type CalendarioEscolar, type Modulo } from './lib/types';
 
 // 'semana' é a grelha do horário; 'horario' ficou com as disciplinas (o nome antigo do separador).
-type Separador = 'cronograma' | 'semana' | 'horario' | 'calendario' | 'catalogo' | 'tarefas';
+type Separador = 'cronograma' | 'semana' | 'horario' | 'semaulas' | 'calendario' | 'catalogo' | 'tarefas';
 
 const SEPARADORES: { id: Separador; nome: string; Icone: () => JSX.Element }[] = [
   { id: 'cronograma', nome: 'Cronograma', Icone: IconTimeline },
   { id: 'semana', nome: 'Horário', Icone: IconClock },
   { id: 'horario', nome: 'Disciplinas', Icone: IconList },
+  { id: 'semaulas', nome: 'Sem aulas', Icone: IconSemAula },
   { id: 'tarefas', nome: 'Tarefas', Icone: IconCheck },
   { id: 'calendario', nome: 'Calendário', Icone: IconCalendar },
   { id: 'catalogo', nome: 'Catálogo', Icone: IconBook },
@@ -267,7 +269,7 @@ export default function App() {
   // A sincronização por Gist só aparece a quem já a tinha ligado.
   const gistLigado = !!(sync.token || sync.gistId);
 
-  const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'semana' || x.id === 'tarefas') : SEPARADORES;
+  const separadores = telemovel ? SEPARADORES.filter((x) => x.id === 'cronograma' || x.id === 'semana' || x.id === 'semaulas' || x.id === 'tarefas') : SEPARADORES;
   // No telemóvel não há Calendário nem Catálogo: mostra o cronograma.
   const atual: Separador = !telemovel ? sep : sep === 'horario' ? 'semana' : sep === 'calendario' || sep === 'catalogo' ? 'cronograma' : sep;
 
@@ -421,7 +423,7 @@ export default function App() {
             )}
             <p className="legend ajuda">
               {estado.calendario.interrupcoes.map((i) => `${i.nome} ${i.inicio.slice(8, 10)}/${i.inicio.slice(5, 7)}–${i.fim.slice(8, 10)}/${i.fim.slice(5, 7)}`).join(' | ')}
-              . Linhas finas: feriados.{(estado.ausencias ?? []).length > 0 && ' Riscado: dias sem aulas.'}
+              . Linhas finas: feriados.{(estado.ausencias ?? []).some((a) => !a.disciplinaId) && ' Riscado: dias sem aulas.'}
             </p>
           </div>
         )}
@@ -431,6 +433,7 @@ export default function App() {
         {atual === 'horario' && (
           <HorarioView estado={estado} planos={planos} temposHorario={temposH} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
         )}
+        {atual === 'semaulas' && <Ausencias estado={estado} atualizar={atualizar} />}
         {atual === 'calendario' && <CalendarioView estado={estado} atualizar={atualizar} />}
         {atual === 'catalogo' && <CatalogoView estado={estado} atualizar={atualizar} />}
         {atual === 'tarefas' && <TarefasView

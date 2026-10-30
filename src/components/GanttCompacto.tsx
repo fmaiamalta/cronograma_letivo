@@ -128,7 +128,7 @@ export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, ho
               {calendario.interrupcoes.map((i) => (
                 <div key={i.id} className="gantt-break" style={{ left: x(i.inicio), width: (diffDays(i.inicio, i.fim) + 1) * pxDia }} />
               ))}
-              {ausencias.map((a) => (
+              {ausencias.filter((a) => !a.disciplinaId).map((a) => (
                 <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: Math.max(2, (diffDays(a.inicio, a.fim) + 1) * pxDia) }} />
               ))}
               {calendario.feriados.map((f) => <div key={f.id} className="gantt-holiday" style={{ left: x(f.data) + pxDia / 2 }} />)}
@@ -138,7 +138,7 @@ export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, ho
             {planos.map((p, idx) => {
               const d = p.disciplina;
               const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
-              const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula);
+              const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula, d.id);
               return (
                 <section key={d.id} className="gc-oculto" style={{ ['--cor' as string]: d.cor }}>
                   {rotuloEnsino(idx)}

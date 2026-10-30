@@ -659,3 +659,7 @@ section:first-of-type > .gc-ensino { border-top: 0; }
   .atividade-linha > :first-child { grid-column: 1 / -1; }
 }
 .aula-linha .aula-aviso { grid-column: 1 / -1; margin-top: -4px; }
+.ausencias .seg { margin-bottom: 12px; }
+.nao-houve { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+.nao-houve .row > * { flex: 1 1 140px; }
+.ausencias-form select[aria-label="Disciplina"] { max-width: 300px; }

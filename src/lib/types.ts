@@ -58,6 +58,8 @@ export interface CalendarioEscolar {
   inicioPorEnsino?: Partial<Record<Ensino, ISODate>>;
   interrupcoes: Periodo[];
   feriados: Feriado[];
+  /** Horas de início dos tempos da escola ("08:15", "09:15", "10:25", ...). */
+  horasTempos?: string[];
   /** Duração de um tempo letivo, em minutos. */
   minutosPorTempo: number;
   /** Nome do ficheiro de onde veio, se foi importado. */
@@ -135,7 +137,19 @@ export interface Disciplina {
  * Dias sem aulas em todas as disciplinas (greve, doença, formação). Valem para
  * todas as disciplinas; no profissional, os módulos passam para as aulas seguintes.
  */
-export interface Ausencia extends Periodo {}
+export interface Ausencia extends Periodo {
+  /** Só esta disciplina (sem valor: todas). */
+  disciplinaId?: string;
+  /** Só estes tempos da disciplina nesse dia (sem valor: o dia todo). */
+  tempos?: number;
+  /** Hora do primeiro tempo perdido, para riscar os tempos certos no horário. */
+  hora?: string;
+}
+
+/** A ausência tira o dia inteiro a esta disciplina? (As de outra disciplina e as de alguns tempos, não.) */
+export function tiraODia(a: Ausencia, disciplinaId?: string): boolean {
+  return !a.disciplinaId || (a.disciplinaId === disciplinaId && !a.tempos);
+}
 
 export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Outro'];
 

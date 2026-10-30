@@ -155,3 +155,18 @@ describe('minutos que cada tempo conta', () => {
     expect(d60.modulos[0].fim! < d50.modulos[0].fim!).toBe(true);
   });
 });
+
+describe('sem aula numa só disciplina', () => {
+  const cal = calendario2026();
+  // 2 tempos à segunda e à quarta; 21/09 é segunda.
+  it('perder 1 dos 2 tempos adia o módulo só esse tempo', () => {
+    const sem = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01');
+    const um = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [{ id: 'c', nome: 'Consulta', inicio: '2026-09-21', fim: '2026-09-21', disciplinaId: 'd1', tempos: 1 }]);
+    expect(sem.modulos[0].sessoes.map((s) => `${s.data} ${s.tempos}`)).toEqual(['2026-09-16 2', '2026-09-21 2', '2026-09-23 2']);
+    expect(um.modulos[0].sessoes.map((s) => `${s.data} ${s.tempos}`)).toEqual(['2026-09-16 2', '2026-09-21 1', '2026-09-23 2', '2026-09-28 1']);
+  });
+  it('a ausência de outra disciplina não mexe nesta', () => {
+    const outra = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [{ id: 'c', nome: 'Consulta', inicio: '2026-09-21', fim: '2026-09-21', disciplinaId: 'outra' }]);
+    expect(outra.modulos[0].fim).toBe('2026-09-23');
+  });
+});

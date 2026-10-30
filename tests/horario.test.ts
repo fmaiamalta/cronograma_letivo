@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { atividadesDe, aulasDe, aulasSemDisciplina, blocosDoEstado, importarHorario, somarMinutos, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
+import { atividadesDe, aulasDe, fimDaAula, iniciosDosTempos, lerHoras, aulasSemDisciplina, blocosDoEstado, importarHorario, somarMinutos, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
 import { estadoInicial } from '../src/lib/presets';
 import type { Disciplina } from '../src/lib/types';
 
@@ -87,5 +87,22 @@ describe('horário do inforarios (.ics)', () => {
     const b = (titulo: string, turma: string) => ({ id: titulo, dia: 0, inicio: '08:15', fim: '09:05', titulo, turmas: [turma] });
     expect(disciplinaDoBloco(b('H.C.A.', '11A'), [hca, hist], [])?.nome).toBe('História da Cultura e das Artes');
     expect(disciplinaDoBloco(b('Hist.', '7A EQ'), [hca, hist], [])?.nome).toBe('História');
+  });
+
+  it('uma aula de vários tempos segue as horas dos tempos da escola', () => {
+    const horas = lerHoras('8h15, 9h15, 10h25, 11h25');
+    expect(horas).toEqual(['08:15', '09:15', '10:25', '11:25']);
+    expect(iniciosDosTempos({ inicio: '09:15', tempos: 2 }, 50, horas)).toEqual(['09:15', '10:25']);
+    expect(fimDaAula({ inicio: '09:15', tempos: 3 }, 50, horas)).toBe('12:15');
+    // Sem a lista: 10 min de intervalo.
+    expect(iniciosDosTempos({ inicio: '09:15', tempos: 2 }, 50)).toEqual(['09:15', '10:15']);
+  });
+
+  it('ao importar, guarda as horas dos tempos e junta tempos separados pelo intervalo grande', () => {
+    const b = (id: string, inicio: string, fim: string) => ({ id, dia: 0, inicio, fim, titulo: 'SI', turmas: ['10M'], sala: 'F103' });
+    const e = importarHorario({ ...estadoInicial(), disciplinas: [disc('10M', 'SI')] }, [b('a', '09:15', '10:05'), b('b', '10:25', '11:15'), b('c', '08:15', '09:05')]);
+    expect(e.calendario.horasTempos).toEqual(['08:15', '09:15', '10:25']);
+    expect(e.disciplinas[0].aulas?.map((a) => `${a.inicio} ${a.tempos}`)).toEqual(['08:15 3']);
+    expect(blocosDoEstado(e).map((x) => x.inicio)).toEqual(['08:15', '09:15', '10:25']);
   });
 });
