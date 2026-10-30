@@ -14,7 +14,7 @@ import { EnviarDialog, ReceberDialog } from './components/TransferDialog';
 import { TarefasView } from './components/TarefasView';
 import { todayISO } from './lib/dates';
 import { planear } from './lib/engine';
-import { temposDoHorario } from './lib/horario';
+import { aulasDe, temposDasAulas } from './lib/horario';
 import { exemplo } from './lib/presets';
 import { calendarioDoLink, useEstado, validarEstado } from './lib/store';
 import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } from './lib/sync';
@@ -93,11 +93,16 @@ export default function App() {
   useEffect(() => gravarPreferencia('cronograma.zoom', pxDia), [pxDia]);
   useEffect(() => gravarPreferencia('cronograma.zoomTel', zoomTel), [zoomTel]);
 
-  // Com horário importado, os tempos por dia de cada disciplina saem da grelha.
-  const temposH = useMemo(
-    () => temposDoHorario(estado.horario?.blocos ?? [], estado.disciplinas, estado.calendario.minutosPorTempo),
-    [estado.horario, estado.disciplinas, estado.calendario.minutosPorTempo],
-  );
+  // Disciplinas com aulas (dia e hora): os tempos por dia saem daí.
+  const temposH = useMemo(() => {
+    const m = new Map<string, number[]>();
+    for (const d of estado.disciplinas) {
+      const t = temposDasAulas(aulasDe(d, estado));
+      if (t) m.set(d.id, t);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado.horario, estado.disciplinas, estado.calendario.minutosPorTempo]);
   const planos = useMemo(
     () => estado.disciplinas.map((d) => planear(temposH.has(d.id) ? { ...d, tempos: temposH.get(d.id)! } : d, estado.calendario, estado.periodosTurma, hoje, estado.ausencias)),
     [estado.disciplinas, estado.calendario, estado.periodosTurma, hoje, estado.ausencias, temposH],
@@ -421,7 +426,7 @@ export default function App() {
           </div>
         )}
         {atual === 'semana' && (
-          <HorarioSemana estado={estado} planos={planos} hoje={hoje} telemovel={telemovel} atualizar={atualizar} onAbrir={(d, m) => setAberto({ d, m })} />
+          <HorarioSemana estado={estado} planos={planos} hoje={hoje} telemovel={telemovel} atualizar={atualizar} onAbrir={(d, m) => setAberto({ d, m })} onIrDisciplinas={() => setSep('horario')} />
         )}
         {atual === 'horario' && (
           <HorarioView estado={estado} planos={planos} temposHorario={temposH} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />

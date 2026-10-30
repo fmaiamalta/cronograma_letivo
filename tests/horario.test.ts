@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { aplicarHorario, aulasSemDisciplina, gravarBlocos, somarMinutos, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
+import { atividadesDe, aulasDe, aulasSemDisciplina, blocosDoEstado, importarHorario, somarMinutos, disciplinaDoBloco, ehAula, lerHorarioICS, nomeTurmas, sigla, temposDoHorario } from '../src/lib/horario';
 import { estadoInicial } from '../src/lib/presets';
 import type { Disciplina } from '../src/lib/types';
 
@@ -53,23 +53,32 @@ describe('horário do inforarios (.ics)', () => {
   it('sem disciplinas, cria-as a partir do horário', () => {
     const vazias = aulasSemDisciplina(blocos, []);
     expect(vazias).toHaveLength(8);
-    const e = aplicarHorario(estadoInicial(), blocos, 'horario.ics', '2026-10-20', vazias);
+    const e = importarHorario(estadoInicial(), blocos, vazias);
     expect(e.disciplinas.map((d) => `${d.turma} ${d.ensino}`)).toContain('12H2H3 profissional');
     expect(e.disciplinas.find((d) => d.turma === 'D9A')).toMatchObject({ ano: 9, ensino: 'basico', tempos: [0, 0, 0, 1, 0, 0, 0] });
-    expect(e.horario?.blocos).toHaveLength(25);
+    expect(e.atividades?.map((a) => a.nome)).toEqual(['Equipa TIC', 'Equipa TIC', 'Reuniões']);
   });
 
-  it('blocos postos à mão ligam-se pela disciplina escolhida e acertam os tempos', () => {
-    const e0 = { ...estadoInicial(), disciplinas: [disc('9A', '', 9)] };
-    const mao = [
-      { id: 'a', dia: 1, inicio: '08:15', fim: somarMinutos('08:15', 50), titulo: 'Qualquer', turmas: ['9A'], disciplinaId: '9A|' },
-      { id: 'b', dia: 1, inicio: '09:15', fim: '10:05', titulo: 'Qualquer', turmas: ['9A'], disciplinaId: '9A|' },
-      { id: 'c', dia: 2, inicio: '15:30', fim: '16:20', titulo: 'Reuniões', turmas: [] },
-    ];
-    const e = gravarBlocos(e0, mao);
-    expect(mao[0].fim).toBe('09:05');
-    expect(e.disciplinas[0].tempos).toEqual([0, 2, 0, 0, 0, 0, 0]);
-    expect(e.horario?.blocos).toHaveLength(3);
+  it('importa para aulas com hora e tempos seguidos, e a grelha fica igual', () => {
+    const e = importarHorario({ ...estadoInicial(), disciplinas: minhas }, blocos);
+    const tic10m = e.disciplinas.find((d) => d.id === '10M|Tecnologias da Informação e Comunicação')!;
+    expect(tic10m.aulas?.map((a) => `${a.dia} ${a.inicio} ${a.tempos} ${a.sala}`)).toEqual(['0 10:25 2 F103', '1 15:30 2 F103']);
+    const grelha = blocosDoEstado(e).map((b) => `${b.dia} ${b.inicio}-${b.fim} ${b.sala ?? ''}`).sort();
+    const original = blocos.map((b) => `${b.dia} ${b.inicio}-${b.fim} ${b.sala ?? ''}`).sort();
+    expect(grelha).toEqual(original);
+  });
+
+  it('dados antigos (horário importado antes) continuam a dar aulas e atividades', () => {
+    const antigo = { ...estadoInicial(), disciplinas: minhas, horario: { blocos } };
+    const ppm = minhas.find((d) => d.turma === '12M')!;
+    expect(aulasDe(ppm, antigo).map((a) => `${a.dia} ${a.inicio} ${a.tempos}`)).toEqual(['1 13:30 2', '2 10:25 1', '4 12:25 1']);
+    expect(atividadesDe(antigo)).toHaveLength(3);
+  });
+
+  it('cada tempo é um bloco de 50 min, com 10 min de intervalo escondido', () => {
+    const d = { ...disc('10M', 'SI'), aulas: [{ id: 'a', dia: 0, inicio: '14:30', tempos: 2, sala: 'F103' }] };
+    const e = { ...estadoInicial(), disciplinas: [d], atividades: [{ id: 't', nome: 'Equipa TIC', dia: 1, inicio: '11:25', fim: somarMinutos('11:25', 50) }] };
+    expect(blocosDoEstado(e).map((b) => `${b.dia} ${b.inicio}-${b.fim} ${b.titulo}`)).toEqual(['0 14:30-15:20 SI', '0 15:30-16:20 SI', '1 11:25-12:15 Equipa TIC']);
   });
 
   it('liga abreviaturas do Untis às disciplinas', () => {

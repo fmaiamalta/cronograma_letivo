@@ -124,6 +124,8 @@ export interface Disciplina {
    * que contam 60). Sem valor: a duração do tempo no calendário.
    */
   minutosPorTempo?: number;
+  /** Aulas da semana, com hora. Com aulas, os tempos por dia saem daqui. */
+  aulas?: Aula[];
   /** Dias concretos sem aula (visita de estudo, greve, reunião). */
   diasSemAula: ISODate[];
   modulos: Modulo[];
@@ -136,6 +138,27 @@ export interface Disciplina {
 export interface Ausencia extends Periodo {}
 
 export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Outro'];
+
+/** Aula semanal de uma disciplina: dia, hora de início e tempos seguidos. */
+export interface Aula {
+  id: string;
+  /** 0 = segunda ... 6 = domingo */
+  dia: number;
+  /** "HH:MM" */
+  inicio: string;
+  tempos: number;
+  sala?: string;
+}
+
+/** Horas do professor que não são aulas (Equipa TIC, apoio, reuniões). */
+export interface Atividade {
+  id: string;
+  nome: string;
+  dia: number;
+  inicio: string;
+  fim: string;
+  sala?: string;
+}
 
 /** Um bloco do horário semanal (uma aula, uma reunião, ...). */
 export interface Bloco {
@@ -175,8 +198,10 @@ export interface Estado {
   periodosTurma: PeriodoTurma[];
   /** Sem valor em dados antigos. */
   ausencias?: Ausencia[];
-  /** Grelha semanal; os tempos de cada disciplina saem daqui quando há blocos dela. */
+  /** Grelha importada (versões antigas). Agora o horário sai das aulas de cada disciplina. */
   horario?: HorarioSemanal;
+  /** Outras horas do horário (Equipa TIC, apoio, reuniões). */
+  atividades?: Atividade[];
   catalogo: EntradaCatalogo[];
 }
 

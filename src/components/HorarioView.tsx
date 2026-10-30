@@ -3,8 +3,10 @@ import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
 import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
-import { ANOS, COMPONENTES, ehGeral, minutosDe, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { atividadesDe, aulasDe, blocosDoEstado, fimDaAula, minutos, somarMinutos, temposDasAulas } from '../lib/horario';
+import { ANOS, COMPONENTES, ehGeral, minutosDe, type Atividade, type Aula, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
+import { ImportarHorario } from './ImportarHorario';
 import { IconDown, IconTrash, IconUp } from './icons';
 
 interface Props {
@@ -63,7 +65,10 @@ export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, 
           <h1>Disciplinas</h1>
           <p className="muted">Uma entrada por disciplina e turma.</p>
         </div>
-        <button className="btn primary" onClick={novaDisciplina}>+ Disciplina</button>
+        <div className="row wrap">
+          <ImportarHorario estado={estado} atualizar={atualizar} />
+          <button className="btn primary" onClick={novaDisciplina}>+ Disciplina</button>
+        </div>
       </div>
 
       {estado.disciplinas.length === 0 && (
@@ -116,6 +121,7 @@ export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, 
         );
       })}
 
+      <OutrasAtividades estado={estado} atualizar={atualizar} />
       <PeriodosTurma estado={estado} turmas={turmas} atualizar={atualizar} />
     </div>
   );
@@ -133,6 +139,23 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
   const [diaSemAula, setDiaSemAula] = useState('');
   const [procura, setProcura] = useState('');
   const mpt = minutosDe(d, estado.calendario);
+  // Aulas com dia e hora: fazem o horário e dão os tempos por dia.
+  const aulas = aulasDe(d, estado);
+  const durAula = estado.calendario.minutosPorTempo;
+  // Outras aulas e atividades à mesma hora (para avisar).
+  const outros = blocosDoEstado(estado).filter((b) => b.disciplinaId !== d.id);
+  const sobreposta = (a: Aula) => {
+    const ini = minutos(a.inicio), fim = minutos(fimDaAula(a, durAula));
+    return outros.find((b) => b.dia === a.dia && minutos(b.inicio) < fim && minutos(b.fim) > ini);
+  };
+  const setAulas = (lista: Aula[]) => mudar((x) => ({ ...x, aulas: lista, tempos: temposDasAulas(lista) ?? x.tempos }));
+  const mudarAula = (id: string, m: Partial<Aula>) => setAulas(aulas.map((a) => (a.id === id ? { ...a, ...m } : a)));
+  const novaAula = () => {
+    const ult = aulas[aulas.length - 1];
+    setAulas([...aulas, ult
+      ? { id: uid(), dia: (ult.dia + 1) % 5, inicio: ult.inicio, tempos: ult.tempos, sala: ult.sala }
+      : { id: uid(), dia: 0, inicio: '08:15', tempos: 1 }]);
+  };
   const set = <K extends keyof Disciplina>(k: K, v: Disciplina[K]) => mudar((x) => ({ ...x, [k]: v }));
 
   const mudarModulo = (id: string, f: (m: Modulo) => Modulo) =>
@@ -238,7 +261,36 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
       </div>
 
       <fieldset>
-        <legend>Tempos por dia{doHorario && <small className="muted"> · do horário</small>}</legend>
+        <legend>Aulas na semana</legend>
+        {aulas.length > 0 && (
+          <div className="aulas-lista">
+            {aulas.map((a) => (
+              <div key={a.id} className="aula-linha">
+                <select value={a.dia} onChange={(e) => mudarAula(a.id, { dia: Number(e.target.value) })} aria-label="Dia">
+                  {DIAS_SEMANA.slice(0, 6).map((n, i) => <option key={n} value={i}>{n}</option>)}
+                </select>
+                <input type="time" step={300} value={a.inicio} onChange={(e) => e.target.value && mudarAula(a.id, { inicio: e.target.value })} aria-label="Início" />
+                <label className="aula-tempos">
+                  <input type="number" min={1} max={6} inputMode="numeric" value={a.tempos} onChange={(e) => mudarAula(a.id, { tempos: Math.max(1, Math.min(6, Number(e.target.value) || 1)) })} aria-label="Tempos" />
+                  {a.tempos === 1 ? 'tempo' : 'tempos'}
+                </label>
+                <input className="aula-sala" value={a.sala ?? ''} placeholder="Sala" onChange={(e) => mudarAula(a.id, { sala: e.target.value || undefined })} aria-label="Sala" />
+                <span className="muted small aula-horas">{a.inicio.replace(':', 'h')}–{fimDaAula(a, durAula).replace(':', 'h')}</span>
+                <button className="icon-btn" onClick={() => setAulas(aulas.filter((x) => x.id !== a.id))} aria-label="Apagar aula"><IconTrash /></button>
+                {(() => {
+                  const b = sobreposta(a);
+                  return b && <small className="warn aula-aviso">À mesma hora: {b.titulo}{b.turmas.length ? ` ${b.turmas.join(', ')}` : ''} ({b.inicio.replace(':', 'h')}–{b.fim.replace(':', 'h')})</small>;
+                })()}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="row wrap">
+          <button className="btn" onClick={novaAula}>+ Aula</button>
+          {aulas.length > 0 && <span className="muted small">{DIAS_SEMANA.map((n, i) => ((doHorario ?? d.tempos)[i] ? `${n} ${(doHorario ?? d.tempos)[i]}` : '')).filter(Boolean).join(' · ')}</span>}
+        </div>
+        {aulas.length === 0 && <>
+        <p className="muted small">Sem hora: só os tempos por dia.</p>
         <div className="week">
           {DIAS_SEMANA.slice(0, 5).map((dia, i) => (
             <label key={dia}>
@@ -256,6 +308,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
             </label>
           ))}
         </div>
+        </>}
         {!ehGeral(d) && (
           <label className="minutos-tempo">Cada tempo conta
             <select value={mpt} onChange={(e) => {
@@ -401,4 +454,47 @@ function PeriodosTurma({ estado, turmas, atualizar }: { estado: Estado; turmas: 
       <button className="btn" onClick={novo} disabled={!turmas.length}>+ Período</button>
     </section>
   );
+}
+
+/** Horas do horário que não são aulas (Equipa TIC, apoio, reuniões): o nome é livre. */
+function OutrasAtividades({ estado, atualizar }: { estado: Estado; atualizar: Props['atualizar'] }) {
+  const lista = atividadesDe(estado);
+  const gravar = (nova: Atividade[]) => atualizar((e) => ({ ...e, atividades: nova }));
+  const mudar = (id: string, m: Partial<Atividade>) => gravar(lista.map((a) => (a.id === id ? { ...a, ...m } : a)));
+  const nova = () => {
+    const ult = lista[lista.length - 1];
+    gravar([...lista, ult
+      ? { id: uid(), nome: '', dia: (ult.dia + 1) % 5, inicio: ult.inicio, fim: ult.fim }
+      : { id: uid(), nome: '', dia: 0, inicio: '08:15', fim: somarMinutos('08:15', estado.calendario.minutosPorTempo) }]);
+  };
+  return (
+    <section className="card plain">
+      <h2>Outras atividades</h2>
+      <p className="muted small">Horas no horário que não são aulas: Equipa TIC, apoio, reuniões.</p>
+      {lista.map((a) => (
+        <div key={a.id} className="atividade-linha">
+          <input value={a.nome} placeholder="Equipa TIC" onChange={(e) => mudar(a.id, { nome: e.target.value })} aria-label="Nome" />
+          <select value={a.dia} onChange={(e) => mudar(a.id, { dia: Number(e.target.value) })} aria-label="Dia">
+            {DIAS_SEMANA.slice(0, 6).map((n, i) => <option key={n} value={i}>{n}</option>)}
+          </select>
+          <input type="time" step={300} value={a.inicio} onChange={(e) => {
+            const v = e.target.value;
+            if (!v) return;
+            // A duração mantém-se ao mudar o início.
+            const dur = Math.max(5, toMin(a.fim) - toMin(a.inicio));
+            mudar(a.id, { inicio: v, fim: somarMinutos(v, dur) });
+          }} aria-label="Início" />
+          <input type="time" step={300} value={a.fim} onChange={(e) => e.target.value && mudar(a.id, { fim: e.target.value })} aria-label="Fim" />
+          <input value={a.sala ?? ''} placeholder="Sala" onChange={(e) => mudar(a.id, { sala: e.target.value || undefined })} aria-label="Sala" />
+          <button className="icon-btn" onClick={() => gravar(lista.filter((x) => x.id !== a.id))} aria-label="Apagar atividade"><IconTrash /></button>
+        </div>
+      ))}
+      <button className="btn" onClick={nova}>+ Atividade</button>
+    </section>
+  );
+}
+
+function toMin(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
 }
