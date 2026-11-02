@@ -6,6 +6,7 @@ import { GanttCompacto } from './components/GanttCompacto';
 import { HorarioView } from './components/HorarioView';
 import { IconBook, IconCalendar, IconCheck, IconClock, IconList, IconSemAula, IconTimeline } from './components/icons';
 import { Ausencias } from './components/Ausencias';
+import { ExportarDialog } from './components/ExportarDialog';
 import { HorarioSemana } from './components/HorarioSemana';
 import { ModuloPanel } from './components/ModuloPanel';
 import { ContaDialog } from './components/ContaDialog';
@@ -73,6 +74,7 @@ export default function App() {
   const [transfer, setTransfer] = useState<'enviar' | 'receber' | 'sync' | 'conta' | null>(() => (location.hash.includes('dados=') ? 'receber' : null));
   const [dadosLink] = useState(() => (location.hash.includes('dados=') ? location.hash : ''));
   const { estado, atualizar, setEstado, gravado } = useEstado();
+  const [pdf, setExportar] = useState<'cronograma' | 'horario' | null>(null);
   const [sep, setSep] = useState<Separador>(() =>
     estado.disciplinas.length || (typeof matchMedia !== 'undefined' && matchMedia(CONSULTA).matches) ? 'cronograma' : 'semana',
   );
@@ -112,10 +114,11 @@ export default function App() {
   const turmas = [...new Set(estado.disciplinas.map((d) => d.turma))].sort();
   // Agrupados por tipo de ensino (profissional, secundário, básico), mantendo a ordem do horário.
   const ORDEM_ENSINO = { profissional: 0, secundario: 1, basico: 2 } as const;
-  const visiveis = (filtroTurma ? planos.filter((p) => p.disciplina.turma === filtroTurma) : planos)
+  const ordenados = planos
     .map((p, i) => ({ p, i }))
     .sort((a, b) => ORDEM_ENSINO[ensinoDe(a.p.disciplina)] - ORDEM_ENSINO[ensinoDe(b.p.disciplina)] || a.i - b.i)
     .map((x) => x.p);
+  const visiveis = filtroTurma ? ordenados.filter((p) => p.disciplina.turma === filtroTurma) : ordenados;
 
   const mudarModulo = (dId: string, mId: string, f: (m: Modulo) => Modulo) =>
     atualizar((e) => ({
@@ -355,6 +358,7 @@ export default function App() {
                   <button className="icon-btn" onClick={() => setZoomTel((z) => Math.min(8, z * 2))} disabled={zoomTel >= 8} aria-label="Aproximar">+</button>
                   <button className="icon-btn" onClick={() => setZoomTel(1)} disabled={zoomTel === 1} aria-label="Ano inteiro">↔</button>
                 </div>
+                <button className="icon-btn btn-pdf" onClick={() => setExportar('cronograma')} aria-label="Exportar PDF">PDF</button>
               </div>
             )}
             <div className="page-head">
@@ -372,6 +376,7 @@ export default function App() {
                     <button className="icon-btn" onClick={() => setPxDia((z) => Math.max(1.5, z - 1))} aria-label="Afastar">−</button>
                     <button className="icon-btn" onClick={() => setPxDia((z) => Math.min(12, z + 1))} aria-label="Aproximar">+</button>
                   </div>
+                  <button className="btn" onClick={() => setExportar('cronograma')}>Exportar PDF</button>
                 </div>
               )}
             </div>
@@ -428,7 +433,7 @@ export default function App() {
           </div>
         )}
         {atual === 'semana' && (
-          <HorarioSemana estado={estado} planos={planos} hoje={hoje} telemovel={telemovel} atualizar={atualizar} onAbrir={(d, m) => setAberto({ d, m })} onIrDisciplinas={() => setSep('horario')} />
+          <HorarioSemana estado={estado} planos={planos} hoje={hoje} telemovel={telemovel} atualizar={atualizar} onAbrir={(d, m) => setAberto({ d, m })} onIrDisciplinas={() => setSep('horario')} onExportar={() => setExportar('horario')} />
         )}
         {atual === 'horario' && (
           <HorarioView estado={estado} planos={planos} temposHorario={temposH} aberta={editar} setAberta={setEditar} atualizar={atualizar} onExemplo={carregarExemplo} />
@@ -446,6 +451,17 @@ export default function App() {
           />}
         {!telemovel && <footer className="creditos rodape">Desenvolvido por Spiga</footer>}
       </main>
+
+      {pdf && (
+        <ExportarDialog
+          estado={estado}
+          planos={ordenados}
+          hoje={hoje}
+          turma={filtroTurma || undefined}
+          tipo={pdf}
+          onFechar={() => setExportar(null)}
+        />
+      )}
 
       {planoAberto && pmAberto && (
         <ModuloPanel

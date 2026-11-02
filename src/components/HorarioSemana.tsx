@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { addDays, DIAS_SEMANA, uid, weekday } from '../lib/dates';
-import { motivoSemAula, type PlanoDisciplina } from '../lib/engine';
-import { blocosDoEstado, ehAula, faixas, minutos, nomeTurmas, sigla } from '../lib/horario';
+import type { PlanoDisciplina } from '../lib/engine';
+import { blocosDoEstado, ehAula, faixas, semAulaNoBloco, minutos, nomeTurmas, sigla } from '../lib/horario';
 import { MOTIVOS_AUSENCIA, type Ausencia, type Bloco, type Estado, type ISODate } from '../lib/types';
 import { EscolherMotivo, nomeDoMotivo } from './Ausencias';
 
@@ -14,6 +14,7 @@ interface Props {
   onAbrir: (disciplinaId: string, moduloId: string) => void;
   /** Sem horário: leva às Disciplinas, onde se põem as aulas. */
   onIrDisciplinas: () => void;
+  onExportar: () => void;
 }
 
 const DIAS_EXTENSO = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -34,7 +35,7 @@ function intervaloSemana(seg: ISODate, dias: number): string {
 }
 
 /** Grelha da semana, só para consulta: as aulas vêm das Disciplinas. */
-export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAbrir, onIrDisciplinas }: Props) {
+export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAbrir, onIrDisciplinas, onExportar }: Props) {
   const blocos = useMemo(() => blocosDoEstado(estado), [estado]);
   const lado = useMemo(() => faixas(blocos), [blocos]);
   const [segunda, setSegunda] = useState(() => segundaDe(hoje));
@@ -64,21 +65,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   const blocosDoDia = (dId: string, dia: number) => blocos.filter((x) => x.disciplinaId === dId && x.dia === dia);
 
   /** Porque não há aula neste bloco nesta data: o dia todo, ou só alguns tempos da disciplina. */
-  const semAula = (b: Bloco, data: ISODate): { motivo: string; ausencia?: Ausencia } | null => {
-    const d = ligacao.get(b.id);
-    const dia = d
-      ? motivoSemAula(data, estado.calendario, d.turma, estado.periodosTurma, d.diasSemAula, estado.ausencias, d.id)
-      : ehAula(b) ? motivoSemAula(data, estado.calendario, '', [], [], estado.ausencias) : null;
-    if (dia) return { motivo: dia, ausencia: (estado.ausencias ?? []).find((a) => d && a.disciplinaId === d.id && !a.tempos && a.inicio === data) };
-    if (!d) return null;
-    const meus = blocosDoDia(d.id, b.dia);
-    for (const a of estado.ausencias ?? []) {
-      if (a.disciplinaId !== d.id || !a.tempos || a.inicio !== data) continue;
-      const i = Math.max(0, meus.findIndex((x) => x.inicio >= (a.hora ?? '00:00')));
-      if (meus.slice(i, i + a.tempos).some((x) => x.id === b.id)) return { motivo: a.nome, ausencia: a };
-    }
-    return null;
-  };
+  const semAula = (b: Bloco, data: ISODate) => semAulaNoBloco(estado, blocos, b, data);
 
   const gravarSemAula = () => {
     if (!detalhe || !marcar) return;
@@ -107,7 +94,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   const navegacao = (
     <div className="semana-nav">
       <strong>{intervaloSemana(segunda, dias)}</strong>
-      {setas}
+      <div className="row">
+        {setas}
+        <button className="icon-btn btn-pdf" onClick={onExportar} aria-label="Exportar PDF">PDF</button>
+      </div>
     </div>
   );
 
@@ -121,6 +111,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
         </div>
         <div className="row wrap">
           {!telemovel && blocos.length > 0 && setas}
+          {!telemovel && blocos.length > 0 && <button className="btn" onClick={onExportar}>Exportar PDF</button>}
         </div>
       </div>
 

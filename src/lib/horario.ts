@@ -1,6 +1,7 @@
 import { uid, weekday } from './dates';
+import { motivoSemAula } from './engine';
 import { CORES } from './presets';
-import { COMPONENTES, type Ano, type Atividade, type Aula, type Bloco, type Disciplina, type Ensino, type Estado } from './types';
+import { COMPONENTES, type Ano, type Atividade, type Ausencia, type Aula, type Bloco, type Disciplina, type Ensino, type Estado } from './types';
 
 // Horário semanal: leitura do .ics (ex.: inforarios.pt) e ligação de cada
 // bloco à disciplina do cronograma, para os tempos por dia saírem daqui.
@@ -343,4 +344,21 @@ export function importarHorario(e: Estado, blocos: Bloco[], criar: { titulo: str
 /** Tempos por dia da semana da disciplina: das aulas com hora ou, sem elas, os escritos à mão. */
 export function temposDaDisciplina(d: Disciplina, e: Pick<Estado, 'horario' | 'disciplinas' | 'calendario'>): number[] {
   return temposDasAulas(aulasDe(d, e)) ?? d.tempos;
+}
+
+/** Porque não há aula num bloco numa data: o dia todo, ou só alguns tempos da disciplina. */
+export function semAulaNoBloco(e: Estado, blocos: Bloco[], b: Bloco, data: string): { motivo: string; ausencia?: Ausencia } | null {
+  const d = e.disciplinas.find((x) => x.id === b.disciplinaId);
+  const dia = d
+    ? motivoSemAula(data, e.calendario, d.turma, e.periodosTurma, d.diasSemAula, e.ausencias, d.id)
+    : ehAula(b) ? motivoSemAula(data, e.calendario, '', [], [], e.ausencias) : null;
+  if (dia) return { motivo: dia, ausencia: (e.ausencias ?? []).find((a) => d && a.disciplinaId === d.id && !a.tempos && a.inicio === data) };
+  if (!d) return null;
+  const meus = blocos.filter((x) => x.disciplinaId === d.id && x.dia === b.dia);
+  for (const a of e.ausencias ?? []) {
+    if (a.disciplinaId !== d.id || !a.tempos || a.inicio !== data) continue;
+    const i = Math.max(0, meus.findIndex((x) => x.inicio >= (a.hora ?? '00:00')));
+    if (meus.slice(i, i + a.tempos).some((x) => x.id === b.id)) return { motivo: a.nome, ausencia: a };
+  }
+  return null;
 }

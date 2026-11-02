@@ -663,3 +663,10 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .nao-houve { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; padding-top: 12px; border-top: 1px solid var(--border); }
 .nao-houve .row > * { flex: 1 1 140px; }
 .ausencias-form select[aria-label="Disciplina"] { max-width: 300px; }
+.btn-pdf { width: auto !important; padding: 0 10px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.exportar { max-width: 460px; }
+.exportar .seg { margin: 4px 0 10px; }
+.exportar-lista { max-height: 45vh; overflow: auto; }
+.exportar-lista label { flex-direction: row; align-items: center; gap: 8px; }
+.swatch-mini { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.exportar-semana { justify-content: center; gap: 12px; margin: 10px 0; }
