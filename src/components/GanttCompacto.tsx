@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
 import { ehGeral, ENSINOS, ensinoDe, type Ausencia, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
-import { fimDoMes, primeiroDoMes, quebrasDe, trocos } from './Gantt';
+import { fimDoMes, limitesDoCronograma, quebrasDe, recortar, trocos } from './Gantt';
 
 interface Props {
   calendario: CalendarioEscolar;
@@ -19,7 +19,7 @@ interface Props {
  * Cronograma para telemóvel: sem coluna de nomes (o nome vai por cima da
  * barra e acompanha o deslize lateral) e, por defeito, o ano inteiro no ecrã.
  */
-export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, hoje, zoom, onAbrir }: Props) {
+export function GanttCompacto({ calendario: calendarioTodo, planos, periodosTurma, ausencias: ausenciasTodas, hoje, zoom, onAbrir }: Props) {
   const caixa = useRef<HTMLDivElement>(null);
   const faixa = useRef<HTMLDivElement>(null);
   const cabeca = useRef<HTMLDivElement>(null);
@@ -35,9 +35,9 @@ export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, ho
     return () => ro.disconnect();
   }, []);
 
-  const inicio = primeiroDoMes(calendario.inicio);
-  const fimAno = planos.reduce((m, p) => (p.fim > m ? p.fim : m), Object.values(calendario.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!);
-  const fim = fimDoMes(fimAno);
+  const { inicio, fim } = limitesDoCronograma(planos, calendarioTodo);
+  const calendario = useMemo(() => recortar(calendarioTodo, inicio, fim), [calendarioTodo, inicio, fim]);
+  const ausencias = ausenciasTodas.filter((a) => a.fim >= inicio && a.inicio <= fim);
   const dias = diffDays(inicio, fim) + 1;
   const pxDia = (larguraVisivel / dias) * zoom;
   const largura = dias * pxDia;
@@ -137,7 +137,9 @@ export function GanttCompacto({ calendario, planos, periodosTurma, ausencias, ho
 
             {planos.map((p, idx) => {
               const d = p.disciplina;
-              const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
+              const periodos = periodosTurma
+                .filter((pt) => pt.turma === d.turma && pt.fim >= inicio && pt.inicio <= fim)
+                .map((pt) => ({ ...pt, inicio: pt.inicio < inicio ? inicio : pt.inicio, fim: pt.fim > fim ? fim : pt.fim }));
               const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula, d.id);
               return (
                 <section key={d.id} className="gc-oculto" style={{ ['--cor' as string]: d.cor }}>

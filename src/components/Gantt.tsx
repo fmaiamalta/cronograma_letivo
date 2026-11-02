@@ -28,6 +28,30 @@ export function fimDoMes(iso: ISODate): ISODate {
   return addDays(prox, -1);
 }
 
+/**
+ * Meses a mostrar: do primeiro ao último mês com aulas (ou tarefas) das
+ * disciplinas à vista. Se tudo acaba em abril, maio e junho ficam de fora.
+ */
+export function limitesDoCronograma(planos: PlanoDisciplina[], cal: CalendarioEscolar): { inicio: ISODate; fim: ISODate } {
+  const fimAno = planos.reduce((m, p) => (p.fim > m ? p.fim : m), Object.values(cal.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!);
+  const datas = planos
+    .flatMap((p) => p.modulos.flatMap((pm) => [pm.inicio, pm.fim, ...pm.modulo.tarefas.flatMap((t) => [t.data, t.fim])]))
+    .filter((d): d is ISODate => !!d)
+    .sort();
+  return { inicio: primeiroDoMes(datas[0] ?? cal.inicio), fim: fimDoMes(datas[datas.length - 1] ?? fimAno) };
+}
+
+/** Calendário só com as interrupções e feriados que caem entre "inicio" e "fim" (cortadas nas pontas). */
+export function recortar(cal: CalendarioEscolar, inicio: ISODate, fim: ISODate): CalendarioEscolar {
+  return {
+    ...cal,
+    interrupcoes: cal.interrupcoes
+      .filter((i) => i.fim >= inicio && i.inicio <= fim)
+      .map((i) => ({ ...i, inicio: i.inicio < inicio ? inicio : i.inicio, fim: i.fim > fim ? fim : i.fim })),
+    feriados: cal.feriados.filter((f) => f.data >= inicio && f.data <= fim),
+  };
+}
+
 /** Separa as aulas de um módulo em troços, partidos por interrupções e períodos sem aulas. */
 export function trocos(pm: PlanoModulo, quebras: { inicio: ISODate; fim: ISODate }[]): [ISODate, ISODate][] {
   const out: [ISODate, ISODate][] = [];
@@ -83,7 +107,7 @@ function etiquetasTrocos(lista: [ISODate, ISODate][], x: (d: ISODate) => number,
   });
 }
 
-export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDia, onAbrir }: Props) {
+export function Gantt({ calendario: calendarioTodo, planos, periodosTurma, ausencias: ausenciasTodas, hoje, pxDia: pxZoom, onAbrir }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   const [LARGURA_ROTULO, setRotulo] = useState(larguraRotulo);
   useEffect(() => {
@@ -92,13 +116,22 @@ export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDi
     return () => window.removeEventListener('resize', f);
   }, []);
 
-  const inicio = primeiroDoMes(calendario.inicio);
-  const fimAno = planos.reduce(
-    (m, p) => (p.fim > m ? p.fim : m),
-    Object.values(calendario.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!,
-  );
-  const fim = fimDoMes(fimAno);
+  const { inicio, fim } = limitesDoCronograma(planos, calendarioTodo);
+  const calendario = recortar(calendarioTodo, inicio, fim);
+  const ausencias = ausenciasTodas.filter((a) => a.fim >= inicio && a.inicio <= fim);
   const dias = diffDays(inicio, fim) + 1;
+  // Com menos meses à vista, as barras alargam até ocupar o espaço disponível.
+  const [disponivel, setDisponivel] = useState(0);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const medir = () => setDisponivel(el.clientWidth);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [planos.length > 0]);
+  const pxDia = Math.max(pxZoom, (disponivel - LARGURA_ROTULO - 2) / dias);
   const largura = dias * pxDia;
   const x = (iso: ISODate) => diffDays(inicio, iso) * pxDia;
 
@@ -177,7 +210,9 @@ export function Gantt({ calendario, planos, periodosTurma, ausencias, hoje, pxDi
 
           {planos.map((p, idx) => {
             const d = p.disciplina;
-            const periodos = periodosTurma.filter((pt) => pt.turma === d.turma);
+            const periodos = periodosTurma
+              .filter((pt) => pt.turma === d.turma && pt.fim >= inicio && pt.inicio <= fim)
+              .map((pt) => ({ ...pt, inicio: pt.inicio < inicio ? inicio : pt.inicio, fim: pt.fim > fim ? fim : pt.fim }));
             const quebras = quebrasDe(calendario, periodos, ausencias, d.diasSemAula, d.id);
             const comp = COMPONENTES.find((c) => c.id === d.componente)?.nome;
             const falta = p.temposNecessarios - p.temposDisponiveis;

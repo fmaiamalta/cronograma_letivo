@@ -1,5 +1,5 @@
 import type { jsPDF } from 'jspdf';
-import { fimDoMes, primeiroDoMes, quebrasDe, trocos } from '../components/Gantt';
+import { fimDoMes, limitesDoCronograma, quebrasDe, trocos } from '../components/Gantt';
 import { addDays, diffDays, fmtShort, MESES, todayISO } from './dates';
 import type { PlanoDisciplina } from './engine';
 import { blocosDoEstado, ehAula, faixas, minutos, nomeTurmas, semAulaNoBloco, sigla } from './horario';
@@ -48,6 +48,7 @@ function rodape(doc: jsPDF) {
   const n = doc.getNumberOfPages();
   for (let p = 1; p <= n; p++) {
     doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...CINZA);
     doc.text(`Exportado a ${todayISO().split('-').reverse().join('/')} · Desenvolvido por Spiga`, M, A - 5);
@@ -85,9 +86,10 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
   const doc = await novoDoc();
   const cal = e.calendario;
   const ausencias = e.ausencias ?? [];
-  const inicio = primeiroDoMes(cal.inicio);
-  const fimAno = planos.reduce((m, p) => (p.fim > m ? p.fim : m), Object.values(cal.fimPorAno).reduce((a, b) => (b! > a! ? b : a))!);
-  const fim = fimDoMes(fimAno);
+  // Só os meses com aulas das disciplinas escolhidas (e as suas tarefas).
+  const { inicio, fim } = limitesDoCronograma(planos, cal);
+  /** Parte de um período que cai dentro do cronograma (ou null). */
+  const dentro = (a: ISODate, b: ISODate): [ISODate, ISODate] | null => (b < inicio || a > fim ? null : [a < inicio ? inicio : a, b > fim ? fim : b]);
   const rot = 72; // coluna dos nomes
   const x0 = M + rot;
   const largura = L - M - x0;
@@ -119,27 +121,35 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
     // Interrupções: datas por cima
     doc.setFontSize(6);
     for (const i of cal.interrupcoes) {
-      const w = (diffDays(i.inicio, i.fim) + 1) * pxDia;
-      doc.text(`${fmtShort(i.inicio)}–${fmtShort(i.fim)}`, x(i.inicio) + w / 2, topoGrelha - 6.5, { align: 'center' });
+      const p = dentro(i.inicio, i.fim);
+      if (!p) continue;
+      const w = (diffDays(p[0], p[1]) + 1) * pxDia;
+      const t = `${fmtShort(i.inicio)}–${fmtShort(i.fim)}`;
+      const tw = doc.getTextWidth(t);
+      doc.text(t, Math.min(Math.max(x(p[0]) + w / 2 - tw / 2, x0), L - M - tw), topoGrelha - 6.5);
     }
   };
 
   // Fundo da grelha numa página, da linha de cima até "ate".
   const grelha = (ate: number) => {
     for (const i of cal.interrupcoes) {
+      const p = dentro(i.inicio, i.fim);
+      if (!p) continue;
       doc.setFillColor(...FUNDO);
-      doc.rect(x(i.inicio), topoGrelha, (diffDays(i.inicio, i.fim) + 1) * pxDia, ate - topoGrelha, 'F');
+      doc.rect(x(p[0]), topoGrelha, (diffDays(p[0], p[1]) + 1) * pxDia, ate - topoGrelha, 'F');
     }
     for (const a of ausencias.filter((a) => !a.disciplinaId)) {
+      const p = dentro(a.inicio, a.fim);
+      if (!p) continue;
       doc.setFillColor(...claro(AVISO, 0.75));
-      doc.rect(x(a.inicio), topoGrelha, Math.max(0.4, (diffDays(a.inicio, a.fim) + 1) * pxDia), ate - topoGrelha, 'F');
+      doc.rect(x(p[0]), topoGrelha, Math.max(0.4, (diffDays(p[0], p[1]) + 1) * pxDia), ate - topoGrelha, 'F');
     }
     doc.setDrawColor(...LINHA);
     doc.setLineWidth(0.2);
     for (const m of meses) doc.line(x(m), topoGrelha - 1, x(m), ate);
     doc.setLineDashPattern([0.6, 0.6], 0);
     doc.setDrawColor(200, 200, 200);
-    for (const f of cal.feriados) doc.line(x(f.data) + pxDia / 2, topoGrelha, x(f.data) + pxDia / 2, ate);
+    for (const f of cal.feriados.filter((f) => f.data >= inicio && f.data <= fim)) doc.line(x(f.data) + pxDia / 2, topoGrelha, x(f.data) + pxDia / 2, ate);
     doc.setLineDashPattern([], 0);
     doc.setDrawColor(...LINHA);
     doc.line(M, topoGrelha, L - M, topoGrelha);
@@ -238,24 +248,44 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
           doc.text(`não cabe: faltam ${pm.emFalta}`, M + rot - 4, yy + 6.4, { align: 'right' });
         }
         // Barras: claras; a parte já dada, na cor cheia.
-        for (const [a, b] of trocos(pm, quebras)) {
+        const lista = trocos(pm, quebras);
+        for (const [a, b] of lista) {
           const ini = x(a);
           const w = Math.max(0.6, x(b) + pxDia - ini);
           doc.setFillColor(...claro(cor, 0.55));
-          doc.roundedRect(ini, yy + 2.6, w, 3, 0.6, 0.6, 'F');
+          doc.roundedRect(ini, yy + 3.4, w, 2.8, 0.6, 0.6, 'F');
           const corte = Math.min(Math.max(x(hoje) + pxDia, ini), ini + w);
           if (corte > ini) {
             doc.setFillColor(...cor);
-            doc.roundedRect(ini, yy + 2.6, corte - ini, 3, 0.6, 0.6, 'F');
+            doc.roundedRect(ini, yy + 3.4, corte - ini, 2.8, 0.6, 0.6, 'F');
+          }
+        }
+        // Datas de início e fim de cada troço, por cima da barra; num troço curto, uma só ("12/02–15/02").
+        // Uma data que tape a anterior desliza para a direita.
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5);
+        doc.setTextColor(60, 60, 60);
+        let ultimoFim = -Infinity;
+        for (const [a, b] of lista) {
+          const ini = x(a);
+          const fimX = x(b) + pxDia;
+          const textos: [string, number][] = a === b || fimX - ini < 16
+            ? [[a === b ? fmtShort(a) : `${fmtShort(a)}–${fmtShort(b)}`, (ini + fimX) / 2]]
+            : [[fmtShort(a), ini + doc.getTextWidth(fmtShort(a)) / 2], [fmtShort(b), fimX - doc.getTextWidth(fmtShort(b)) / 2]];
+          for (const [t, centro] of textos) {
+            const w = doc.getTextWidth(t);
+            const esq = Math.min(Math.max(centro - w / 2, ultimoFim + 0.8), L - M - w);
+            doc.text(t, esq, yy + 2.8);
+            ultimoFim = esq + w;
           }
         }
         // Tarefas: losango (um dia) ou traço (período).
         for (const t of m.tarefas.filter((t) => t.data)) {
           const c: RGB = t.feita ? [47, 125, 79] : (t.fim ?? t.data!) < hoje ? HOJE : cor;
           doc.setFillColor(...c);
-          if (t.fim) doc.rect(x(t.data!), yy + 1.2, Math.max(0.6, x(t.fim) + pxDia - x(t.data!)), 0.8, 'F');
+          if (t.fim) doc.rect(x(t.data!), yy + 6.7, Math.max(0.6, x(t.fim) + pxDia - x(t.data!)), 0.7, 'F');
           else {
-            const cx = x(t.data!) + pxDia / 2, cy = yy + 4.1, r = 1.3;
+            const cx = x(t.data!) + pxDia / 2, cy = yy + 4.8, r = 1.3;
             doc.triangle(cx - r, cy, cx, cy - r, cx + r, cy, 'F');
             doc.triangle(cx - r, cy, cx, cy + r, cx + r, cy, 'F');
           }
@@ -267,6 +297,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
 
   // Legenda
   doc.setPage(doc.getNumberOfPages());
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(...CINZA);
   const legenda = cal.interrupcoes.map((i) => `${i.nome} ${fmtShort(i.inicio)}–${fmtShort(i.fim)}`).join(' | ');
