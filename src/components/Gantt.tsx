@@ -199,7 +199,7 @@ export function Gantt({ calendario: calendarioTodo, planos, periodosTurma, ausen
                 <span>{i.nome}</span>
               </div>
             ))}
-            {ausencias.filter((a) => !a.disciplinaId).map((a) => (
+            {ausencias.filter((a) => !a.disciplinaId && !a.conta).map((a) => (
               <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: (diffDays(a.inicio, a.fim) + 1) * pxDia }} title={`${a.nome}: ${a.inicio === a.fim ? fmtLong(a.inicio) : `${fmtLong(a.inicio)} a ${fmtLong(a.fim)}`}`} />
             ))}
             {calendario.feriados.map((f) => (

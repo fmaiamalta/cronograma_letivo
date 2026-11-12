@@ -144,11 +144,17 @@ export interface Ausencia extends Periodo {
   tempos?: number;
   /** Hora do primeiro tempo perdido, para riscar os tempos certos no horário. */
   hora?: string;
+  /**
+   * Conta como aula (sumário numerado): fica registada, mas o cronograma não
+   * avança. Sem valor: o sumário não é numerado e os módulos passam para as
+   * aulas seguintes.
+   */
+  conta?: boolean;
 }
 
 /** A ausência tira o dia inteiro a esta disciplina? (As de outra disciplina e as de alguns tempos, não.) */
 export function tiraODia(a: Ausencia, disciplinaId?: string): boolean {
-  return !a.disciplinaId || (a.disciplinaId === disciplinaId && !a.tempos);
+  return !a.conta && (!a.disciplinaId || (a.disciplinaId === disciplinaId && !a.tempos));
 }
 
 export const MOTIVOS_AUSENCIA = ['Greve', 'Doença', 'Formação', 'Serviço oficial', 'Visita de estudo', 'Prova', 'Reunião', 'Outro'];

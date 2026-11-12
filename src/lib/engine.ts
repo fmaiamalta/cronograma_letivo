@@ -77,7 +77,7 @@ export function diasDeAula(d: Disciplina, cal: CalendarioEscolar, periodosTurma:
     if (tempos <= 0) continue;
     if (motivoSemAula(data, cal, d.turma, periodosTurma, d.diasSemAula, ausencias, d.id)) continue;
     // Só alguns tempos perdidos nesse dia (ex.: 1 dos 2): no profissional, o módulo avança só esses.
-    const perdidos = ausencias.filter((a) => a.disciplinaId === d.id && a.tempos && a.inicio === data).reduce((s, a) => s + a.tempos!, 0);
+    const perdidos = ausencias.filter((a) => !a.conta && a.disciplinaId === d.id && a.tempos && a.inicio === data).reduce((s, a) => s + a.tempos!, 0);
     if (tempos - perdidos <= 0) continue;
     dias.push({ data, tempos: tempos - perdidos });
   }

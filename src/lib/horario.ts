@@ -347,7 +347,7 @@ export function temposDaDisciplina(d: Disciplina, e: Pick<Estado, 'horario' | 'd
 }
 
 /** Porque não há aula num bloco numa data: o dia todo, ou só alguns tempos da disciplina. */
-export function semAulaNoBloco(e: Estado, blocos: Bloco[], b: Bloco, data: string): { motivo: string; ausencia?: Ausencia } | null {
+export function semAulaNoBloco(e: Estado, blocos: Bloco[], b: Bloco, data: string): { motivo: string; ausencia?: Ausencia; conta?: boolean } | null {
   const d = e.disciplinas.find((x) => x.id === b.disciplinaId);
   const dia = d
     ? motivoSemAula(data, e.calendario, d.turma, e.periodosTurma, d.diasSemAula, e.ausencias, d.id)
@@ -356,9 +356,26 @@ export function semAulaNoBloco(e: Estado, blocos: Bloco[], b: Bloco, data: strin
   if (!d) return null;
   const meus = blocos.filter((x) => x.disciplinaId === d.id && x.dia === b.dia);
   for (const a of e.ausencias ?? []) {
-    if (a.disciplinaId !== d.id || !a.tempos || a.inicio !== data) continue;
+    if (a.conta || a.disciplinaId !== d.id || !a.tempos || a.inicio !== data) continue;
     const i = Math.max(0, meus.findIndex((x) => x.inicio >= (a.hora ?? '00:00')));
     if (meus.slice(i, i + a.tempos).some((x) => x.id === b.id)) return { motivo: a.nome, ausencia: a };
+  }
+  return contaNoBloco(e, blocos, b, data);
+}
+
+/** Ausência que conta como aula (sumário numerado) neste bloco: não risca, só avisa. */
+function contaNoBloco(e: Estado, blocos: Bloco[], b: Bloco, data: string): { motivo: string; ausencia: Ausencia; conta: true } | null {
+  const d = e.disciplinas.find((x) => x.id === b.disciplinaId);
+  for (const a of e.ausencias ?? []) {
+    if (!a.conta || data < a.inicio || data > a.fim) continue;
+    if (a.disciplinaId && a.disciplinaId !== d?.id) continue;
+    if (!a.disciplinaId && !ehAula(b)) continue;
+    if (a.tempos) {
+      const meus = blocos.filter((x) => x.disciplinaId === d?.id && x.dia === b.dia);
+      const i = Math.max(0, meus.findIndex((x) => x.inicio >= (a.hora ?? '00:00')));
+      if (!meus.slice(i, i + a.tempos).some((x) => x.id === b.id)) continue;
+    }
+    return { motivo: a.nome, ausencia: a, conta: true };
   }
   return null;
 }

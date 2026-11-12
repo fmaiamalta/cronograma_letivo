@@ -42,7 +42,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   // Aula tocada: dia, hora, turma e sala (como no horário da escola).
   const [detalhe, setDetalhe] = useState<{ bloco: Bloco; data: ISODate } | null>(null);
   // "Não houve aula", no cartão da aula.
-  const [marcar, setMarcar] = useState<{ motivo: string; outro: string; todos: boolean } | null>(null);
+  const [marcar, setMarcar] = useState<{ motivo: string; outro: string; todos: boolean; conta: boolean } | null>(null);
   const fecharDetalhe = () => { setDetalhe(null); setMarcar(null); };
 
   const dias = blocos.some((b) => b.dia === 5) ? 6 : 5;
@@ -74,8 +74,8 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
     if (!d) return;
     const n = blocosDoDia(d.id, b.dia).length;
     const nova: Ausencia = marcar.todos || n === 1
-      ? { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id }
-      : { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id, tempos: 1, hora: b.inicio };
+      ? { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id, conta: marcar.conta || undefined }
+      : { id: uid(), nome: nomeDoMotivo(marcar.motivo, marcar.outro), inicio: data, fim: data, disciplinaId: d.id, tempos: 1, hora: b.inicio, conta: marcar.conta || undefined };
     atualizar((e) => ({ ...e, ausencias: [...(e.ausencias ?? []), nova] }));
     fecharDetalhe();
   };
@@ -147,7 +147,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                   {horas.map((m) => <div key={m} className="semana-linha" style={{ top: (m - inicioMin) * pxMin }} />)}
                   {blocos.filter((b) => b.dia === i).map((b) => {
                     const d = ligacao.get(b.id);
-                    const motivo = semAula(b, data)?.motivo;
+                    const sa = semAula(b, data);
+                    // Conta como aula (sumário numerado): não se risca, só se assinala.
+                    const motivo = sa && !sa.conta ? sa.motivo : undefined;
+                    const nota = sa?.conta ? sa.motivo : undefined;
                     const mod = d && !motivo ? moduloNoDia(d.id, data) : undefined;
                     // Disciplina anual (ensino geral): o módulo é a própria disciplina, não vale a pena repetir.
                     const mostrarMod = mod && !mod.anual;
@@ -156,12 +159,12 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                     const { faixa, n } = lado.get(b.id) ?? { faixa: 0, n: 1 };
                     const nome = ehAula(b) ? sigla(b.titulo) : b.titulo;
                     const linha2 = [nomeTurmas(b.turmas), b.sala].filter(Boolean).join(' · ');
-                    const titulo = `${b.inicio}–${b.fim} ${b.titulo}${linha2 ? `\n${linha2}` : ''}${mod ? `\n${mod.codigo ?? ''} ${mod.nome}` : ''}${motivo ? `\n${motivo}` : ''}`;
+                    const titulo = `${b.inicio}–${b.fim} ${b.titulo}${linha2 ? `\n${linha2}` : ''}${mod ? `\n${mod.codigo ?? ''} ${mod.nome}` : ''}${motivo ? `\n${motivo}` : ''}${nota ? `\n${nota} (conta como aula)` : ''}`;
                     return (
                       <button
                         type="button"
                         key={b.id}
-                        className={'semana-bloco' + (ehAula(b) ? '' : ' outro') + (passado ? ' passado' : '') + (motivo ? ' sem-aula' : '')}
+                        className={'semana-bloco' + (ehAula(b) ? '' : ' outro') + (passado ? ' passado' : '') + (motivo ? ' sem-aula' : '') + (nota ? ' conta' : '')}
                         style={{ top, height: h, left: `calc(${(faixa / n) * 100}% + 2px)`, right: `calc(${((n - faixa - 1) / n) * 100}% + 2px)`, ['--cor' as string]: d?.cor ?? 'var(--border)' }}
                         title={titulo}
                         onClick={(ev) => {
@@ -171,7 +174,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                       >
                         <span className="sb-nome">{nome}</span>
                         {linha2 && <span className="sb-sub">{linha2}</span>}
-                        {motivo ? <span className="sb-mod">{motivo}</span> : mostrarMod && <span className="sb-mod">{mod.codigo?.replace(/^UC0*/, '') ?? mod.nome}</span>}
+                        {motivo ? <span className="sb-mod">{motivo}</span> : nota ? <span className="sb-mod">{nota} · conta</span> : mostrarMod && <span className="sb-mod">{mod.codigo?.replace(/^UC0*/, '') ?? mod.nome}</span>}
                       </button>
                     );
                   })}
@@ -187,7 +190,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
         const { bloco: b, data } = detalhe;
         const d = ligacao.get(b.id);
         const sa = semAula(b, data);
-        const motivo = sa?.motivo;
+        const motivo = sa && !sa.conta ? sa.motivo : undefined;
         const mod = d && !motivo ? moduloNoDia(d.id, data) : undefined;
         const nDia = d ? blocosDoDia(d.id, b.dia).length : 0;
         const h = (x: string) => x.replace(':', 'h');
@@ -203,6 +206,11 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                   {b.sala && <div><dt>Sala</dt><dd>{b.sala}</dd></div>}
                 </dl>
               )}
+              {sa?.conta && (
+                <p className="muted">{sa.motivo} · conta como aula (sumário numerado)
+                  {' '}<button className="link-btn small" onClick={() => { atualizar((e) => ({ ...e, ausencias: (e.ausencias ?? []).filter((x) => x.id !== sa.ausencia!.id) })); fecharDetalhe(); }}>Anular</button>
+                </p>
+              )}
               {motivo && (
                 <p className="warn">Sem aula: {motivo}
                   {sa?.ausencia && <> <button className="link-btn small" onClick={() => { atualizar((e) => ({ ...e, ausencias: (e.ausencias ?? []).filter((x) => x.id !== sa.ausencia!.id) })); fecharDetalhe(); }}>Anular</button></>}
@@ -213,6 +221,10 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                   <div className="row wrap">
                     <EscolherMotivo motivo={marcar.motivo} outro={marcar.outro} onMotivo={(m) => setMarcar({ ...marcar, motivo: m })} onOutro={(t) => setMarcar({ ...marcar, outro: t })} />
                   </div>
+                  <label className="check-linha">
+                    <input type="checkbox" checked={marcar.conta} onChange={(e) => setMarcar({ ...marcar, conta: e.target.checked })} />
+                    Conta como aula (sumário numerado)
+                  </label>
                   {nDia > 1 && (
                     <div className="seg" role="radiogroup" aria-label="Tempos">
                       <button type="button" role="radio" aria-checked={!marcar.todos} className={!marcar.todos ? 'on' : ''} onClick={() => setMarcar({ ...marcar, todos: false })}>Só este tempo</button>
@@ -231,7 +243,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                 </div>
               ) : (
                 <div className="row wrap end">
-                  {d && !motivo && <button className="btn" onClick={() => setMarcar({ motivo: MOTIVOS_AUSENCIA[0], outro: '', todos: false })}>Não houve aula</button>}
+                  {d && !sa && <button className="btn" onClick={() => setMarcar({ motivo: MOTIVOS_AUSENCIA[0], outro: '', todos: false, conta: false })}>Não houve aula</button>}
                   {d && mod && <button className="btn" onClick={() => { fecharDetalhe(); onAbrir(d.id, mod.id); }}>{mod.anual ? 'Ver disciplina' : 'Ver módulo'}</button>}
                   <button className="btn primary" onClick={fecharDetalhe}>Fechar</button>
                 </div>

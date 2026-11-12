@@ -57,6 +57,7 @@ export function Ausencias({ estado, atualizar }: Props) {
   const [inicio, setInicio] = useState(todayISO());
   const [fim, setFim] = useState('');
   const [tempos, setTempos] = useState(0); // 0 = todos os desse dia
+  const [conta, setConta] = useState(false);
 
   const d = estado.disciplinas.find((x) => x.id === dId);
   const nesseDia = d && inicio ? temposDaDisciplina(d, estado)[weekday(inicio)] ?? 0 : 0;
@@ -64,13 +65,15 @@ export function Ausencias({ estado, atualizar }: Props) {
   const adicionar = () => {
     if (!inicio || (uma && !d)) return;
     const nova: Ausencia = uma
-      ? { id: uid(), nome: nomeDoMotivo(motivo, outro), inicio, fim: inicio, disciplinaId: d!.id, tempos: tempos && tempos < nesseDia ? tempos : undefined }
-      : { id: uid(), nome: nomeDoMotivo(motivo, outro), inicio, fim: fim && fim > inicio ? fim : inicio };
+      ? { id: uid(), nome: nomeDoMotivo(motivo, outro), inicio, fim: inicio, disciplinaId: d!.id, tempos: tempos && tempos < nesseDia ? tempos : undefined, conta: conta || undefined }
+      : { id: uid(), nome: nomeDoMotivo(motivo, outro), inicio, fim: fim && fim > inicio ? fim : inicio, conta: conta || undefined };
     atualizar((e) => ({ ...e, ausencias: [...(e.ausencias ?? []), nova] }));
     setFim('');
     setOutro('');
     setTempos(0);
+    setConta(false);
   };
+  const mudar = (id: string, m: Partial<Ausencia>) => atualizar((e) => ({ ...e, ausencias: (e.ausencias ?? []).map((a) => (a.id === id ? { ...a, ...m } : a)) }));
   const apagar = (id: string) => atualizar((e) => ({ ...e, ausencias: (e.ausencias ?? []).filter((a) => a.id !== id) }));
 
   return (
@@ -78,7 +81,7 @@ export function Ausencias({ estado, atualizar }: Props) {
       <div className="page-head">
         <div>
           <h1>Sem aulas</h1>
-          <p className="muted">Greve, doença, consulta, formação. No profissional, os módulos avançam o que se perdeu.</p>
+          <p className="muted">Greve, doença, consulta, formação. No profissional, os módulos avançam o que se perdeu, exceto se contar como aula.</p>
         </div>
       </div>
 
@@ -104,6 +107,10 @@ export function Ausencias({ estado, atualizar }: Props) {
           )}
           <button className="btn primary" disabled={!inicio || (uma && (!d || nesseDia === 0))} onClick={adicionar}>Adicionar</button>
         </div>
+        <label className="check-linha conta-aula">
+          <input type="checkbox" checked={conta} onChange={(e) => setConta(e.target.checked)} />
+          Conta como aula (sumário numerado): o cronograma não avança
+        </label>
         {uma && d && inicio && nesseDia === 0 && <p className="small warn">Sem aulas desta disciplina neste dia da semana.</p>}
       </section>
 
@@ -117,8 +124,12 @@ export function Ausencias({ estado, atualizar }: Props) {
                 <li key={a.id}>
                   <span className="grow">
                     <strong>{a.nome}</strong> {a.inicio === a.fim ? fmtLong(a.inicio) : `${fmtLong(a.inicio)} a ${fmtLong(a.fim)}`}
-                    <small className="muted"> · {disc ? `${disc.turma} | ${disc.nome}` : a.disciplinaId ? 'disciplina apagada' : 'todas'} · {t} {t === 1 ? 'tempo' : 'tempos'}</small>
+                    <small className="muted"> · {disc ? `${disc.turma} | ${disc.nome}` : a.disciplinaId ? 'disciplina apagada' : 'todas'} · {a.conta ? 'conta como aula' : `${t} ${t === 1 ? 'tempo' : 'tempos'}`}</small>
                   </span>
+                  <label className="conta-toggle" title="Sumário numerado: o cronograma não avança">
+                    <input type="checkbox" checked={!!a.conta} onChange={(e) => mudar(a.id, { conta: e.target.checked || undefined })} />
+                    Conta
+                  </label>
                   <button className="icon-btn" onClick={() => apagar(a.id)} aria-label={`Apagar ${a.nome} de ${fmtLong(a.inicio)}`}><IconTrash /></button>
                 </li>
               );

@@ -128,7 +128,7 @@ export function GanttCompacto({ calendario: calendarioTodo, planos, periodosTurm
               {calendario.interrupcoes.map((i) => (
                 <div key={i.id} className="gantt-break" style={{ left: x(i.inicio), width: (diffDays(i.inicio, i.fim) + 1) * pxDia }} />
               ))}
-              {ausencias.filter((a) => !a.disciplinaId).map((a) => (
+              {ausencias.filter((a) => !a.disciplinaId && !a.conta).map((a) => (
                 <div key={a.id} className="gantt-ausencia" style={{ left: x(a.inicio), width: Math.max(2, (diffDays(a.inicio, a.fim) + 1) * pxDia) }} />
               ))}
               {calendario.feriados.map((f) => <div key={f.id} className="gantt-holiday" style={{ left: x(f.data) + pxDia / 2 }} />)}

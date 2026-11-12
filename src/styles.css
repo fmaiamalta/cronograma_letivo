@@ -670,3 +670,7 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .exportar-lista label { flex-direction: row; align-items: center; gap: 8px; }
 .swatch-mini { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .exportar-semana { justify-content: center; gap: 12px; margin: 10px 0; }
+.semana-bloco.conta { outline: 1px dashed var(--accent); outline-offset: -1px; }
+.nao-houve .check-linha, .ausencias .check-linha { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 0.9rem; }
+.ausencias-lista .conta-toggle { flex-direction: row; align-items: center; gap: 6px; font-size: 0.8rem; white-space: nowrap; }
+.ausencias .conta-aula { margin-top: 10px; }

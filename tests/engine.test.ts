@@ -184,3 +184,17 @@ describe('dias sem aula antigos', () => {
     expect(migrarDiasSemAula(e)).toBe(e);
   });
 });
+
+describe('ausência que conta como aula (sumário numerado)', () => {
+  const cal = calendario2026();
+  it('fica registada mas o cronograma não avança', () => {
+    const base = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01');
+    const greve = { id: 'g', nome: 'Greve', inicio: '2026-09-21', fim: '2026-09-21', conta: true };
+    const umTempo = { id: 'c', nome: 'Consulta', inicio: '2026-09-23', fim: '2026-09-23', disciplinaId: 'd1', tempos: 1, conta: true };
+    const com = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [greve, umTempo]);
+    expect(com.modulos[0].sessoes).toEqual(base.modulos[0].sessoes);
+    // Sem "conta", a greve adia o módulo.
+    const naoConta = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [{ ...greve, conta: undefined }]);
+    expect(naoConta.modulos[0].fim! > base.modulos[0].fim!).toBe(true);
+  });
+});

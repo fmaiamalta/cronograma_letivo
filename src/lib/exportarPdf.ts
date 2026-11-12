@@ -138,7 +138,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
       doc.setFillColor(...FUNDO);
       doc.rect(x(p[0]), topoGrelha, (diffDays(p[0], p[1]) + 1) * pxDia, ate - topoGrelha, 'F');
     }
-    for (const a of ausencias.filter((a) => !a.disciplinaId)) {
+    for (const a of ausencias.filter((a) => !a.disciplinaId && !a.conta)) {
       const p = dentro(a.inicio, a.fim);
       if (!p) continue;
       doc.setFillColor(...claro(AVISO, 0.75));
@@ -301,7 +301,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
   doc.setFontSize(6.5);
   doc.setTextColor(...CINZA);
   const legenda = cal.interrupcoes.map((i) => `${i.nome} ${fmtShort(i.inicio)}–${fmtShort(i.fim)}`).join(' | ');
-  doc.text(caber(doc, `${legenda}. Linhas tracejadas: feriados. Vermelho: hoje.${ausencias.some((a) => !a.disciplinaId) ? ' Laranja: dias sem aulas.' : ''}`, L - 2 * M), M, A - 9);
+  doc.text(caber(doc, `${legenda}. Linhas tracejadas: feriados. Vermelho: hoje.${ausencias.some((a) => !a.disciplinaId && !a.conta) ? ' Laranja: dias sem aulas.' : ''}`, L - 2 * M), M, A - 9);
   rodape(doc);
   return doc;
 }
