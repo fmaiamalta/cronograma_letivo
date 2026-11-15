@@ -34,6 +34,15 @@ function intervaloSemana(seg: ISODate, dias: number): string {
   return m1 === m2 ? `${d1} a ${d2} de ${mes(m1)}` : `${d1} de ${mes(m1)} a ${d2} de ${mes(m2)}`;
 }
 
+/** "16–20 nov" ou "30 nov–4 dez" (telemóvel). */
+function intervaloCurto(seg: ISODate, dias: number): string {
+  const fim = addDays(seg, dias - 1);
+  const [, m1, d1] = seg.split('-').map(Number);
+  const [, m2, d2] = fim.split('-').map(Number);
+  const mes = (m: number) => MESES_EXTENSO[m - 1].slice(0, 3);
+  return m1 === m2 ? `${d1}–${d2} ${mes(m1)}` : `${d1} ${mes(m1)}–${d2} ${mes(m2)}`;
+}
+
 /** Grelha da semana, só para consulta: as aulas vêm das Disciplinas. */
 export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAbrir, onIrDisciplinas, onExportar }: Props) {
   const blocos = useMemo(() => blocosDoEstado(estado), [estado]);
@@ -49,7 +58,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   const datas = Array.from({ length: dias }, (_, i) => addDays(segunda, i));
   const inicioMin = blocos.length ? Math.min(...blocos.map((b) => Math.floor(minutos(b.inicio) / 60) * 60)) : 8 * 60;
   const fimMin = blocos.length ? Math.max(...blocos.map((b) => Math.ceil(minutos(b.fim) / 60) * 60)) : 18 * 60;
-  const pxMin = telemovel ? 0.95 : 1.15;
+  const pxMin = telemovel ? 1.5 : 1.15;
   const altura = (fimMin - inicioMin) * pxMin;
   const horas = Array.from({ length: (fimMin - inicioMin) / 60 + 1 }, (_, i) => inicioMin + i * 60);
 
@@ -93,7 +102,7 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
   // No telemóvel, as datas e as setas numa só linha, no lugar do título.
   const navegacao = (
     <div className="semana-nav">
-      <strong>{intervaloSemana(segunda, dias)}</strong>
+      <strong>{intervaloCurto(segunda, dias)}</strong>
       <div className="row">
         {setas}
         <button className="icon-btn btn-pdf" onClick={onExportar} aria-label="Exportar PDF">PDF</button>
@@ -173,7 +182,9 @@ export function HorarioSemana({ estado, planos, hoje, telemovel, atualizar, onAb
                         }}
                       >
                         <span className="sb-nome">{nome}</span>
-                        {linha2 && <span className="sb-sub">{linha2}</span>}
+                        {/* Turma e sala em linhas próprias: numa coluna estreita (telemóvel) cabem sem cortar. */}
+                        {b.turmas.length > 0 && <span className="sb-sub">{nomeTurmas(b.turmas)}</span>}
+                        {b.sala && <span className="sb-sub">{b.sala}</span>}
                         {motivo ? <span className="sb-mod">{motivo}</span> : nota ? <span className="sb-mod">{nota} · conta</span> : mostrarMod && <span className="sb-mod">{mod.codigo?.replace(/^UC0*/, '') ?? mod.nome}</span>}
                       </button>
                     );

@@ -674,3 +674,62 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .nao-houve .check-linha, .ausencias .check-linha { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 0.9rem; }
 .ausencias-lista .conta-toggle { flex-direction: row; align-items: center; gap: 6px; font-size: 0.8rem; white-space: nowrap; }
 .ausencias .conta-aula { margin-top: 10px; }
+
+/* ---- Telemóvel: tamanhos legíveis (letra de 13–16 px, linhas altas, alvos de 44 px) ---- */
+@media (max-width: 760px) {
+  :root { font-size: 16px; }
+  input:not([type='checkbox']):not([type='radio']):not([type='color']), select, textarea { font-size: 16px; min-height: 44px; }
+  .btn { min-height: 44px; }
+  .icon-btn { min-width: 40px; min-height: 40px; }
+}
+.telemovel h1 { font-size: 1.35rem; }
+.telemovel .tabs button { font-size: 12px; gap: 3px; padding: 8px 4px; }
+.telemovel .tabs svg { width: 22px; height: 22px; }
+
+/* Cronograma (telemóvel) */
+.telemovel .gc-page { padding: 10px 10px 8px; gap: 10px; }
+.gc-controls select { min-height: 44px; font-size: 16px; }
+.gc-controls .icon-btn { width: 42px; height: 44px; font-size: 18px; }
+.gc-controls .btn-pdf { height: 44px; font-size: 13px; }
+.gc-head { height: 68px; }
+.gc-month { top: 8px; font-size: 12px; }
+.gc-break-date { font-size: 11px; padding: 2px 5px; }
+.gc-break-date.l0 { top: 27px; }
+.gc-break-date.l1 { top: 45px; }
+.gc-hoje { font-size: 11px; padding: 3px 7px; }
+.gc-ensino { padding: 7px 0; }
+.gc-ensino .gc-sticky { font-size: 12px; }
+.gc-group { height: 38px; }
+.gc-group .gc-sticky { font-size: 15px; padding: 0 8px; }
+.gc-row { height: 60px; }
+.gc-mod { margin-top: 7px; font-size: 14px; line-height: 1.3; padding: 0 8px; }
+.gc-mod b { font-weight: 600; font-size: 13px; }
+.gc-bar { bottom: 10px; height: 14px; border-radius: 4px; }
+.gc-task { bottom: 11px; width: 12px; height: 12px; }
+.gc-task-range { bottom: 27px; height: 3px; }
+
+/* Horário (telemóvel) */
+.semana-nav strong { font-size: 17px; }
+@media (max-width: 760px) {
+  .semana { padding: 8px 4px 12px 0; }
+  .semana-cab, .semana-corpo { grid-template-columns: 40px repeat(var(--dias), minmax(0, 1fr)); }
+  .semana-dia small { font-size: 13px; }
+  .semana-dia strong { font-size: 18px; }
+  .semana-horas span { right: 4px; font-size: 12px; }
+  .semana-bloco { padding: 4px 4px 4px 5px; border-left-width: 4px; border-radius: 6px; line-height: 1.25; }
+  .sb-nome { font-size: 14px; }
+  .sb-sub, .sb-mod { font-size: 11.5px; }
+  .ausencias-lista li { padding: 10px 0; }
+}
+
+/* Nome do módulo numa linha, datas na seguinte (telemóvel) */
+.gc-mod { display: block; width: max-content; max-width: 100%; }
+.gc-mod-nome, .gc-mod b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-mod b { margin-top: 1px; }
+.gc-row { height: 66px; }
+.gc-row:has(.gc-mod strong) .gc-mod b { display: block; }
+.gc-bar { bottom: 8px; height: 12px; }
+.gc-task { bottom: 8px; width: 12px; height: 12px; }
+.gc-task-range { bottom: 22px; }
+/* Atividades (Equipa TIC, Reuniões): o nome pode ocupar duas linhas */
+.semana-bloco.outro .sb-nome { white-space: normal; overflow-wrap: break-word; hyphens: auto; font-size: 13px; }

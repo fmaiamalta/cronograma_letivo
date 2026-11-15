@@ -55,7 +55,7 @@ export function GanttCompacto({ calendario: calendarioTodo, planos, periodosTurm
     const fimLinha = [-Infinity, -Infinity];
     return calendario.interrupcoes.map((i) => {
       const texto = `${fmtShort(i.inicio)}–${fmtShort(i.fim)}`;
-      const w = texto.length * 5.6 + 8;
+      const w = texto.length * 6.6 + 10;
       const centro = x(i.inicio) + ((diffDays(i.inicio, i.fim) + 1) * pxDia) / 2;
       const left = Math.max(0, Math.min(largura - w, centro - w / 2));
       const linha = left > fimLinha[0] + 3 ? 0 : 1;
@@ -93,8 +93,9 @@ export function GanttCompacto({ calendario: calendarioTodo, planos, periodosTurm
     const m = pm.modulo;
     return (
       <span className="gc-sticky gc-mod">
-        {ehGeral(d) ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo.replace(/^UC0*/, '')} · ` : ''}{m.nome}</>}
-        {pm.inicio && <b> {fmtShort(pm.inicio)}–{fmtShort(pm.fim!)}</b>}
+        <span className="gc-mod-nome">{ehGeral(d) ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo.replace(/^UC0*/, '')} · ` : ''}{m.nome}</>}</span>
+        {/* As datas numa linha própria, para o nome ter a largura toda. */}
+        {pm.inicio && <b>{fmtShort(pm.inicio)} a {fmtShort(pm.fim!)} · {pm.totalTempos} tempos</b>}
       </span>
     );
   };
