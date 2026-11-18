@@ -110,7 +110,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...CINZA);
-    doc.text([cal.escola, subtitulo].filter(Boolean).join(' · '), M, 19.5);
+    doc.text([cal.escola, subtitulo, `Dadas até ${hoje.split('-').reverse().join('/')}`].filter(Boolean).join(' · '), M, 19.5);
     // Meses
     doc.setFontSize(7.5);
     for (const m of meses) {
@@ -238,15 +238,25 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
         doc.setFontSize(7.2);
         doc.setTextColor(20, 20, 20);
         const nome = geral ? `${d.turma} | ${d.nome}` : `${m.codigo ? `${m.codigo} · ` : ''}${m.nome}`;
-        doc.text(caber(doc, nome, rot - 5), M + 2.5, yy + 3.4);
+        // Aviso de que não cabe: na 1.ª linha, à direita; o nome encolhe para lhe dar lugar.
+        let espacoNome = rot - 5;
+        if (pm.emFalta > 0) {
+          const aviso = `não cabe: faltam ${quantidade(pm.emFalta, d, cal)}`;
+          doc.setFontSize(5.8);
+          doc.setTextColor(...AVISO);
+          doc.text(aviso, M + rot - 3, yy + 3.4, { align: 'right' });
+          espacoNome -= doc.getTextWidth(aviso) + 2;
+          doc.setFontSize(7.2);
+          doc.setTextColor(20, 20, 20);
+        }
+        doc.text(caber(doc, nome, espacoNome), M + 2.5, yy + 3.4);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(5.8);
         doc.setTextColor(...CINZA);
-        doc.text(pm.inicio ? `${fmtShort(pm.inicio)} a ${fmtShort(pm.fim!)} · ${quantidade(pm.totalTempos, d, cal)}` : 'sem aulas marcadas', M + 2.5, yy + 6.4);
-        if (pm.emFalta > 0) {
-          doc.setTextColor(...AVISO);
-          doc.text(`não cabe: faltam ${quantidade(pm.emFalta, d, cal)}`, M + rot - 4, yy + 6.4, { align: 'right' });
-        }
+        // Datas e quanto já foi dado do total (ex.: "dadas 10 h de 25 h (40%)").
+        const pct = pm.totalTempos ? Math.round((pm.dados / pm.totalTempos) * 100) : 0;
+        const dadas = `${geral ? 'dados' : 'dadas'} ${geral ? pm.dados : quantidade(pm.dados, d, cal)} de ${quantidade(pm.totalTempos, d, cal)} (${pct}%)`;
+        doc.text(pm.inicio ? caber(doc, `${fmtShort(pm.inicio)} a ${fmtShort(pm.fim!)} · ${dadas}`, rot - 5) : 'sem aulas marcadas', M + 2.5, yy + 6.4);
         // Barras: claras; a parte já dada, na cor cheia.
         const lista = trocos(pm, quebras);
         for (const [a, b] of lista) {
