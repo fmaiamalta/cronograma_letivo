@@ -1,7 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { fimDoMes, limitesDoCronograma, quebrasDe, trocos } from '../components/Gantt';
 import { addDays, diffDays, fmtShort, MESES, todayISO } from './dates';
-import type { PlanoDisciplina } from './engine';
+import { quantidade, type PlanoDisciplina } from './engine';
 import { blocosDoEstado, ehAula, faixas, minutos, nomeTurmas, semAulaNoBloco, sigla } from './horario';
 import { ehGeral, ENSINOS, ensinoDe, type Estado, type ISODate } from './types';
 
@@ -221,7 +221,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
         if (falta > 0) {
           doc.setFontSize(6);
           doc.setTextColor(...AVISO);
-          doc.text(`faltam ${falta} tempos`, x0 + 1, yy + 4.1);
+          doc.text(`faltam ${quantidade(falta, d, cal)}`, x0 + 1, yy + 4.1);
         }
       });
     }
@@ -242,10 +242,10 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(5.8);
         doc.setTextColor(...CINZA);
-        doc.text(pm.inicio ? `${fmtShort(pm.inicio)} a ${fmtShort(pm.fim!)} · ${pm.totalTempos} tempos` : 'sem aulas marcadas', M + 2.5, yy + 6.4);
+        doc.text(pm.inicio ? `${fmtShort(pm.inicio)} a ${fmtShort(pm.fim!)} · ${quantidade(pm.totalTempos, d, cal)}` : 'sem aulas marcadas', M + 2.5, yy + 6.4);
         if (pm.emFalta > 0) {
           doc.setTextColor(...AVISO);
-          doc.text(`não cabe: faltam ${pm.emFalta}`, M + rot - 4, yy + 6.4, { align: 'right' });
+          doc.text(`não cabe: faltam ${quantidade(pm.emFalta, d, cal)}`, M + rot - 4, yy + 6.4, { align: 'right' });
         }
         // Barras: claras; a parte já dada, na cor cheia.
         const lista = trocos(pm, quebras);

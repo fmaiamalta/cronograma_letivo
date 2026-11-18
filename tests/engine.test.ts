@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, weekday } from '../src/lib/dates';
-import { diasDeAula, planear, temposDoModulo } from '../src/lib/engine';
+import { diasDeAula, fmtHoras, planear, quantidade, temposDoModulo } from '../src/lib/engine';
 import { calendario2026 } from '../src/lib/presets';
 import { migrarDiasSemAula, type Disciplina, type Modulo } from '../src/lib/types';
 import { estadoInicial } from '../src/lib/presets';
@@ -196,5 +196,18 @@ describe('ausência que conta como aula (sumário numerado)', () => {
     // Sem "conta", a greve adia o módulo.
     const naoConta = planear(disciplina({ modulos: [mod('A', 6)] }), cal, [], '2026-09-01', [{ ...greve, conta: undefined }]);
     expect(naoConta.modulos[0].fim! > base.modulos[0].fim!).toBe(true);
+  });
+});
+
+describe('horas no profissional', () => {
+  const cal = calendario2026();
+  it('converte os tempos em horas com os minutos que cada tempo conta', () => {
+    expect(quantidade(30, disciplina(), cal)).toBe('25 h');
+    expect(quantidade(25, disciplina({ minutosPorTempo: 60 }), cal)).toBe('25 h');
+    expect(quantidade(3, disciplina(), cal)).toBe('2,5 h');
+    expect(fmtHoras(5 / 6)).toBe('0,8 h');
+  });
+  it('no ensino geral fica em tempos', () => {
+    expect(quantidade(188, disciplina({ ensino: 'secundario' }), cal)).toBe('188 tempos');
   });
 });

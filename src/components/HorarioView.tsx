@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
 import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
-import { limitesDisciplina, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
+import { limitesDisciplina, quantidade, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { atividadesDe, aulasDe, blocosDoEstado, fimDaAula, horasDosTempos, lerHoras, minutos, somarMinutos, temposDasAulas } from '../lib/horario';
 import { ANOS, COMPONENTES, ehGeral, minutosDe, type Atividade, type Aula, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
@@ -96,7 +96,7 @@ export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, 
                 <small>
                   {semanal} {semanal === 1 ? 'tempo' : 'tempos'}/semana · {d.modulos.length} {d.modulos.length === 1 ? 'módulo' : 'módulos'}
                   {plano && plano.temposNecessarios > plano.temposDisponiveis && (
-                    <span className="warn"> · faltam {plano.temposNecessarios - plano.temposDisponiveis} tempos</span>
+                    <span className="warn"> · faltam {quantidade(plano.temposNecessarios - plano.temposDisponiveis, d, estado.calendario)}</span>
                   )}
                 </small>
               </div>
@@ -404,7 +404,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
         </div>
         {plano && (
           <p className={'small ' + (plano.temposNecessarios > plano.temposDisponiveis ? 'warn' : 'muted')}>
-            Necessários: {plano.temposNecessarios} tempos. Disponíveis até {fmtLong(plano.fim)}: {plano.temposDisponiveis} tempos ({plano.dias.length} dias).
+            Necessárias: {quantidade(plano.temposNecessarios, d, estado.calendario)} ({plano.temposNecessarios} tempos). Disponíveis até {fmtLong(plano.fim)}: {quantidade(plano.temposDisponiveis, d, estado.calendario)} ({plano.temposDisponiveis} tempos, {plano.dias.length} dias).
           </p>
         )}
       </fieldset>}

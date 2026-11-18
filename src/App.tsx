@@ -468,6 +468,7 @@ export default function App() {
           key={pmAberto.modulo.id}
           plano={planoAberto}
           pm={pmAberto}
+          calendario={estado.calendario}
           hoje={hoje}
           onMudar={(f) => mudarModulo(aberto!.d, aberto!.m, f)}
           onFechar={() => setAberto(null)}

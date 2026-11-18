@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { fmtLong, todayISO, uid } from '../lib/dates';
-import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
-import type { Modulo, Tarefa } from '../lib/types';
+import { quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
+import type { CalendarioEscolar, Modulo, Tarefa } from '../lib/types';
 import { IconTrash } from './icons';
 
 interface Props {
   plano: PlanoDisciplina;
   pm: PlanoModulo;
+  calendario: CalendarioEscolar;
   hoje: string;
   onMudar: (f: (m: Modulo) => Modulo) => void;
   onFechar: () => void;
@@ -15,11 +16,13 @@ interface Props {
   soLeitura?: boolean;
 }
 
-export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar, soLeitura }: Props) {
+export function ModuloPanel({ plano, pm, calendario, hoje, onMudar, onFechar, onEditar, soLeitura }: Props) {
   const m = pm.modulo;
   const [titulo, setTitulo] = useState('');
   const [data, setData] = useState(pm.inicio && pm.inicio > hoje ? pm.inicio : todayISO());
   const [verAulas, setVerAulas] = useState(false);
+  // No profissional, em horas; no ensino geral, em tempos.
+  const q = (t: number) => quantidade(t, plano.disciplina, calendario);
   const pct = pm.totalTempos ? Math.round((pm.dados / pm.totalTempos) * 100) : 0;
 
   const mudarTarefa = (id: string, f: (t: Tarefa) => Tarefa | null) =>
@@ -48,17 +51,17 @@ export function ModuloPanel({ plano, pm, hoje, onMudar, onFechar, onEditar, soLe
         <dl className="facts">
           <div><dt>Início</dt><dd>{pm.inicio ? fmtLong(pm.inicio) : '—'}</dd></div>
           <div><dt>Fim</dt><dd>{pm.fim ? fmtLong(pm.fim) : '—'}</dd></div>
-          <div><dt>Duração</dt><dd>{pm.totalTempos} tempos{m.unidade === 'h' ? ` (${m.quantidade} h)` : ''}</dd></div>
+          <div><dt>Duração</dt><dd>{q(pm.totalTempos)}</dd></div>
           <div><dt>Aulas</dt><dd>{pm.sessoes.length}</dd></div>
         </dl>
 
         <div className="progress-block">
           <div className="progress-label">
             <span>Dados até hoje</span>
-            <strong>{pm.dados} de {pm.totalTempos} tempos ({pct}%)</strong>
+            <strong>{q(pm.dados)} de {q(pm.totalTempos)} ({pct}%)</strong>
           </div>
           <div className="progress"><span style={{ width: `${pct}%` }} /></div>
-          {pm.emFalta > 0 && <p className="warn">Faltam {pm.emFalta} tempos que não cabem até ao fim do ano letivo.</p>}
+          {pm.emFalta > 0 && <p className="warn">Faltam {q(pm.emFalta)} que não cabem até ao fim do ano letivo.</p>}
         </div>
 
         <h3>Tarefas</h3>

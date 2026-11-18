@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
-import type { PlanoDisciplina, PlanoModulo } from '../lib/engine';
+import { quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
 import type { Ausencia, CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
 import { COMPONENTES, ehGeral, ENSINOS, ensinoDe, tiraODia } from '../lib/types';
 
@@ -229,7 +229,7 @@ export function Gantt({ calendario: calendarioTodo, planos, periodosTurma, ausen
                 {!geral && <div className="gantt-row gantt-row-group">
                   <div className="gantt-label">
                     <strong>{d.turma} | {d.nome}</strong>
-                    <small>{comp}{falta > 0 && <span className="warn"> · faltam {falta} tempos</span>}</small>
+                    <small>{comp}{falta > 0 && <span className="warn"> · faltam {quantidade(falta, d, calendario)}</span>}</small>
                   </div>
                   <div className="gantt-track" style={{ width: largura }} />
                 </div>}
@@ -241,12 +241,12 @@ export function Gantt({ calendario: calendarioTodo, planos, periodosTurma, ausen
                       <button className="gantt-label gantt-mod" onClick={() => onAbrir(d.id, m.id)}>
                         <span className="mod-name">{geral ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo} · ` : ''}{m.nome}</>}</span>
                         <small>
-                          {pm.inicio ? `${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}` : 'sem aulas marcadas'} | {pm.totalTempos} tempos
+                          {pm.inicio ? `${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}` : 'sem aulas marcadas'} | {quantidade(pm.totalTempos, d, calendario)}
                         </small>
                         <span className="mod-progress" aria-label={`${pct}% dado`}>
                           <span style={{ width: `${pct}%` }} />
                         </span>
-                        {pm.emFalta > 0 && <small className="warn">Não cabe: faltam {pm.emFalta} tempos</small>}
+                        {pm.emFalta > 0 && <small className="warn">Não cabe: faltam {quantidade(pm.emFalta, d, calendario)}</small>}
                       </button>
                       <div className="gantt-track" style={{ width: largura }}>
                         {periodos.map((pt) => (

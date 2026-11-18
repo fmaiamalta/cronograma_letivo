@@ -1,5 +1,5 @@
 import { addDays, inRange, weekday } from './dates';
-import { ensinoDe, fimDoAno, minutosDe, tiraODia, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
+import { ehGeral, ensinoDe, fimDoAno, minutosDe, tiraODia, type Ausencia, type CalendarioEscolar, type Disciplina, type ISODate, type Modulo, type PeriodoTurma } from './types';
 
 export interface DiaDeAula {
   data: ISODate;
@@ -145,4 +145,19 @@ export function planear(
     temposDisponiveis: dias.reduce((s, x) => s + x.tempos, 0),
     temposNecessarios: modulos.reduce((s, x) => s + x.totalTempos, 0),
   };
+}
+
+/** "25 h", "12,5 h", "0,8 h" */
+export function fmtHoras(h: number): string {
+  const r = Math.round(h * 10) / 10;
+  return `${String(r).replace('.', ',')} h`;
+}
+
+/**
+ * Quantidade para mostrar: no profissional, em horas (tempos × os minutos que
+ * cada tempo conta na disciplina); no ensino geral, em tempos.
+ */
+export function quantidade(tempos: number, d: Disciplina, cal: Pick<CalendarioEscolar, 'minutosPorTempo'>): string {
+  if (ehGeral(d)) return `${tempos} ${tempos === 1 ? 'tempo' : 'tempos'}`;
+  return fmtHoras((tempos * minutosDe(d, cal)) / 60);
 }
