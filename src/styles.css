@@ -733,3 +733,7 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .gc-task-range { bottom: 22px; }
 /* Atividades (Equipa TIC, Reuniões): o nome pode ocupar duas linhas */
 .semana-bloco.outro .sb-nome { white-space: normal; overflow-wrap: break-word; hyphens: auto; font-size: 13px; }
+.docente { flex-direction: row; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 0.9rem; }
+.docente input { max-width: 320px; }
+.exportar-docente { margin: 6px 0; flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
+.gantt-mod .mod-dado { color: var(--muted); }

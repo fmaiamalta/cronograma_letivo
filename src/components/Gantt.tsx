@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
-import { quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
+import { dadoDoTotal, quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
 import type { Ausencia, CalendarioEscolar, ISODate, PeriodoTurma } from '../lib/types';
 import { COMPONENTES, ehGeral, ENSINOS, ensinoDe, tiraODia } from '../lib/types';
 
@@ -243,6 +243,7 @@ export function Gantt({ calendario: calendarioTodo, planos, periodosTurma, ausen
                         <small>
                           {pm.inicio ? `${fmtLong(pm.inicio)} a ${fmtLong(pm.fim!)}` : 'sem aulas marcadas'} | {quantidade(pm.totalTempos, d, calendario)}
                         </small>
+                        {pm.inicio && <small className="mod-dado">Dadas {dadoDoTotal(pm.dados, pm.totalTempos, d, calendario)}</small>}
                         <span className="mod-progress" aria-label={`${pct}% dado`}>
                           <span style={{ width: `${pct}%` }} />
                         </span>

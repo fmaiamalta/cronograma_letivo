@@ -71,6 +71,10 @@ export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, 
         </div>
       </div>
 
+      <label className="docente">Docente
+        <input value={estado.docente ?? ''} placeholder="Nome (opcional)" onChange={(e) => atualizar((x) => ({ ...x, docente: e.target.value || undefined }))} />
+      </label>
+
       {estado.disciplinas.length === 0 && (
         <div className="empty">
           <p>Sem disciplinas.</p>

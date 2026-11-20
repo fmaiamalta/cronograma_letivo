@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, weekday } from '../src/lib/dates';
-import { diasDeAula, fmtHoras, planear, quantidade, temposDoModulo } from '../src/lib/engine';
+import { dadoDoTotal, diasDeAula, fmtHoras, planear, quantidade, temposDoModulo } from '../src/lib/engine';
 import { calendario2026 } from '../src/lib/presets';
 import { migrarDiasSemAula, type Disciplina, type Modulo } from '../src/lib/types';
 import { estadoInicial } from '../src/lib/presets';
@@ -209,5 +209,17 @@ describe('horas no profissional', () => {
   });
   it('no ensino geral fica em tempos', () => {
     expect(quantidade(188, disciplina({ ensino: 'secundario' }), cal)).toBe('188 tempos');
+  });
+});
+
+describe('dado do total', () => {
+  const cal = calendario2026();
+  it('no profissional, horas e tempos dados sobre o total em horas', () => {
+    expect(dadoDoTotal(12, 30, disciplina(), cal)).toBe('10 h (12 tempos) de 25 h');
+    expect(dadoDoTotal(10, 25, disciplina({ minutosPorTempo: 60 }), cal)).toBe('10 h (10 tempos) de 25 h');
+    expect(dadoDoTotal(1, 30, disciplina(), cal)).toBe('0,8 h (1 tempo) de 25 h');
+  });
+  it('no ensino geral, tempos', () => {
+    expect(dadoDoTotal(50, 188, disciplina({ ensino: 'secundario' }), cal)).toBe('50 de 188 tempos');
   });
 });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fmtLong, todayISO, uid } from '../lib/dates';
-import { quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
+import { dadoDoTotal, quantidade, type PlanoDisciplina, type PlanoModulo } from '../lib/engine';
 import type { CalendarioEscolar, Modulo, Tarefa } from '../lib/types';
 import { IconTrash } from './icons';
 
@@ -58,7 +58,7 @@ export function ModuloPanel({ plano, pm, calendario, hoje, onMudar, onFechar, on
         <div className="progress-block">
           <div className="progress-label">
             <span>Dados até hoje</span>
-            <strong>{q(pm.dados)} de {q(pm.totalTempos)} ({pct}%)</strong>
+            <strong>{dadoDoTotal(pm.dados, pm.totalTempos, plano.disciplina, calendario)} ({pct}%)</strong>
           </div>
           <div className="progress"><span style={{ width: `${pct}%` }} /></div>
           {pm.emFalta > 0 && <p className="warn">Faltam {q(pm.emFalta)} que não cabem até ao fim do ano letivo.</p>}

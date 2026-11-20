@@ -293,7 +293,7 @@ export default function App() {
           <span className="brand-mark" aria-hidden />
           <div>
             <strong>Cronograma Letivo</strong>
-            <small>{estado.calendario.escola || 'Cursos profissionais'} · {estado.calendario.anoLetivo}</small>
+            <small>{[estado.docente, estado.calendario.escola || 'Cursos profissionais', estado.calendario.anoLetivo].filter(Boolean).join(' · ')}</small>
           </div>
         </div>
         <nav className="tabs" aria-label="Secções">

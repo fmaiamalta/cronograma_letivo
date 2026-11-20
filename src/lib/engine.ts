@@ -161,3 +161,13 @@ export function quantidade(tempos: number, d: Disciplina, cal: Pick<CalendarioEs
   if (ehGeral(d)) return `${tempos} ${tempos === 1 ? 'tempo' : 'tempos'}`;
   return fmtHoras((tempos * minutosDe(d, cal)) / 60);
 }
+
+/**
+ * O que já foi dado do total. No profissional, em horas e em tempos (as
+ * escolas fazem a conta de maneiras diferentes) sobre o total em horas:
+ * "10 h (12 tempos) de 25 h". No ensino geral, em tempos: "50 de 188 tempos".
+ */
+export function dadoDoTotal(dados: number, total: number, d: Disciplina, cal: Pick<CalendarioEscolar, 'minutosPorTempo'>): string {
+  if (ehGeral(d)) return `${dados} de ${total} tempos`;
+  return `${quantidade(dados, d, cal)} (${dados} ${dados === 1 ? 'tempo' : 'tempos'}) de ${quantidade(total, d, cal)}`;
+}

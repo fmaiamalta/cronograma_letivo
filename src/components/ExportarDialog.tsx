@@ -36,6 +36,8 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
   const [segunda, setSegunda] = useState(() => segundaDe(hoje));
   const [aFazer, setAFazer] = useState(false);
   const [erro, setErro] = useState('');
+  const [comDocente, setComDocente] = useState(!!estado.docente);
+  const docente = comDocente ? estado.docente : undefined;
 
   const alternar = (id: string) => setEscolhidas((s) => {
     const n = new Set(s);
@@ -54,11 +56,11 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
           : lista.length === 1 ? `${lista[0].disciplina.turma} | ${lista[0].disciplina.nome}`
           : turmas.length === 1 && lista.length === planos.filter((p) => p.disciplina.turma === turmas[0]).length ? `Turma ${turmas[0]}`
           : lista.map((p) => `${p.disciplina.turma} | ${p.disciplina.nome}`).join(', ');
-        const doc = await pdfCronograma(estado, lista, hoje, subtitulo);
+        const doc = await pdfCronograma(estado, lista, hoje, subtitulo, docente);
         const nome = lista.length === 1 ? `${lista[0].disciplina.turma} ${lista[0].disciplina.nome}` : turmas.length === 1 ? turmas[0] : 'todas';
         await entregar(doc, `Cronograma ${nome}.pdf`.replace(/[\\/:*?"<>|]/g, '-'));
       } else {
-        const doc = await pdfHorario(estado, planos, segunda, semanaTexto(segunda));
+        const doc = await pdfHorario(estado, planos, segunda, semanaTexto(segunda), docente);
         await entregar(doc, `Horário ${segunda.split('-').reverse().join('-')}.pdf`);
       }
       onFechar();
@@ -104,6 +106,12 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
           </div>
         )}
 
+        {estado.docente && (
+          <label className="check-linha exportar-docente">
+            <input type="checkbox" checked={comDocente} onChange={(e) => setComDocente(e.target.checked)} />
+            Incluir o nome do docente ({estado.docente})
+          </label>
+        )}
         {erro && <p className="warn">{erro}</p>}
         <div className="row wrap end">
           <button className="btn" onClick={onFechar}>Cancelar</button>

@@ -1,7 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { fimDoMes, limitesDoCronograma, quebrasDe, trocos } from '../components/Gantt';
 import { addDays, diffDays, fmtShort, MESES, todayISO } from './dates';
-import { quantidade, type PlanoDisciplina } from './engine';
+import { dadoDoTotal, quantidade, type PlanoDisciplina } from './engine';
 import { blocosDoEstado, ehAula, faixas, minutos, nomeTurmas, semAulaNoBloco, sigla } from './horario';
 import { ehGeral, ENSINOS, ensinoDe, type Estado, type ISODate } from './types';
 
@@ -82,7 +82,7 @@ export async function entregar(doc: jsPDF, nome: string) {
 }
 
 /** Cronograma das disciplinas escolhidas, com interrupções, feriados, dias sem aulas e o dia de hoje. */
-export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: ISODate, subtitulo: string): Promise<jsPDF> {
+export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: ISODate, subtitulo: string, docente?: string): Promise<jsPDF> {
   const doc = await novoDoc();
   const cal = e.calendario;
   const ausencias = e.ausencias ?? [];
@@ -110,7 +110,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...CINZA);
-    doc.text([cal.escola, subtitulo, `Dadas até ${hoje.split('-').reverse().join('/')}`].filter(Boolean).join(' · '), M, 19.5);
+    doc.text([docente, cal.escola, subtitulo, `Dadas até ${hoje.split('-').reverse().join('/')}`].filter(Boolean).join(' · '), M, 19.5);
     // Meses
     doc.setFontSize(7.5);
     for (const m of meses) {
@@ -255,7 +255,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
         doc.setTextColor(...CINZA);
         // Datas e quanto já foi dado do total (ex.: "dadas 10 h de 25 h (40%)").
         const pct = pm.totalTempos ? Math.round((pm.dados / pm.totalTempos) * 100) : 0;
-        const dadas = `${geral ? 'dados' : 'dadas'} ${geral ? pm.dados : quantidade(pm.dados, d, cal)} de ${quantidade(pm.totalTempos, d, cal)} (${pct}%)`;
+        const dadas = `${geral ? 'dados' : 'dadas'} ${dadoDoTotal(pm.dados, pm.totalTempos, d, cal)} (${pct}%)`;
         doc.text(pm.inicio ? caber(doc, `${fmtShort(pm.inicio)} a ${fmtShort(pm.fim!)} · ${dadas}`, rot - 5) : 'sem aulas marcadas', M + 2.5, yy + 6.4);
         // Barras: claras; a parte já dada, na cor cheia.
         const lista = trocos(pm, quebras);
@@ -319,7 +319,7 @@ export async function pdfCronograma(e: Estado, planos: PlanoDisciplina[], hoje: 
 const DIAS_EXTENSO = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 /** Horário da semana que começa em "segunda", com a UC de cada aula e as aulas que não houve. */
-export async function pdfHorario(e: Estado, planos: PlanoDisciplina[], segunda: ISODate, titulo: string): Promise<jsPDF> {
+export async function pdfHorario(e: Estado, planos: PlanoDisciplina[], segunda: ISODate, titulo: string, docente?: string): Promise<jsPDF> {
   const doc = await novoDoc();
   const blocos = blocosDoEstado(e);
   const lado = faixas(blocos);
@@ -339,7 +339,7 @@ export async function pdfHorario(e: Estado, planos: PlanoDisciplina[], segunda: 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...CINZA);
-  doc.text([e.calendario.escola, titulo].filter(Boolean).join(' · '), M, 19.5);
+  doc.text([docente, e.calendario.escola, titulo].filter(Boolean).join(' · '), M, 19.5);
 
   // Dias
   for (let i = 0; i < nDias; i++) {

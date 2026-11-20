@@ -222,6 +222,8 @@ export interface Estado {
   horario?: HorarioSemanal;
   /** Outras horas do horário (Equipa TIC, apoio, reuniões). */
   atividades?: Atividade[];
+  /** Nome do docente, para o cabeçalho e os PDF (opcional). */
+  docente?: string;
   catalogo: EntradaCatalogo[];
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { addDays, diffDays, fmtLong, fmtShort, MESES } from '../lib/dates';
-import { quantidade, type PlanoDisciplina } from '../lib/engine';
+import { dadoDoTotal, type PlanoDisciplina } from '../lib/engine';
 import { ehGeral, ENSINOS, ensinoDe, type Ausencia, type CalendarioEscolar, type ISODate, type PeriodoTurma } from '../lib/types';
 import { fimDoMes, limitesDoCronograma, quebrasDe, recortar, trocos } from './Gantt';
 
@@ -95,7 +95,7 @@ export function GanttCompacto({ calendario: calendarioTodo, planos, periodosTurm
       <span className="gc-sticky gc-mod">
         <span className="gc-mod-nome">{ehGeral(d) ? <strong>{d.turma} | {d.nome}</strong> : <>{m.codigo ? `${m.codigo.replace(/^UC0*/, '')} · ` : ''}{m.nome}</>}</span>
         {/* As datas numa linha própria, para o nome ter a largura toda. */}
-        {pm.inicio && <b>{fmtShort(pm.inicio)} a {fmtShort(pm.fim!)} · {quantidade(pm.totalTempos, d, calendario)}</b>}
+        {pm.inicio && <b>{fmtShort(pm.inicio)}–{fmtShort(pm.fim!)} · {ehGeral(d) ? "dados" : "dadas"} {dadoDoTotal(pm.dados, pm.totalTempos, d, calendario)}</b>}
       </span>
     );
   };
