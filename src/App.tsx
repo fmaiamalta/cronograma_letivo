@@ -125,6 +125,17 @@ export default function App() {
   const valoresMin = new Set(profissionais.map((d) => minutosDe(d, estado.calendario)));
   const minutosComuns = valoresMin.size === 1 ? [...valoresMin][0] : undefined;
 
+  // O mesmo campo no computador (topo do cronograma) e no telemóvel (linha por baixo dos filtros).
+  const campoMinutos = profissionais.length > 0 && (
+    <label className="minutos-prof" title="Muda em todas as disciplinas do profissional; em cada disciplina pode escolher-se outro valor">
+      Profissional: 1 tempo conta
+      <select value={minutosComuns ?? ''} onChange={(e) => atualizar((x) => aplicarMinutosProfissional(x, Number(e.target.value)))}>
+        {minutosComuns === undefined && <option value="">vários</option>}
+        {[...new Set([45, 50, 60, 90, estado.calendario.minutosPorTempo])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n} min</option>)}
+      </select>
+    </label>
+  );
+
   const mudarModulo = (dId: string, mId: string, f: (m: Modulo) => Modulo) =>
     atualizar((e) => ({
       ...e,
@@ -366,6 +377,7 @@ export default function App() {
                 <button className="icon-btn btn-pdf" onClick={() => setExportar('cronograma')} aria-label="Exportar PDF">PDF</button>
               </div>
             )}
+            {telemovel && planos.length > 0 && campoMinutos && <div className="gc-minutos">{campoMinutos}</div>}
             <div className="page-head">
               <div>
                 <h1>Cronograma {estado.calendario.anoLetivo}</h1>
@@ -373,15 +385,7 @@ export default function App() {
               </div>
               {planos.length > 0 && (
                 <div className="row wrap print-hide">
-                  {profissionais.length > 0 && (
-                    <label className="minutos-prof" title="Muda em todas as disciplinas do profissional; em cada disciplina pode escolher-se outro valor">
-                      Profissional: 1 tempo conta
-                      <select value={minutosComuns ?? ''} onChange={(e) => atualizar((x) => aplicarMinutosProfissional(x, Number(e.target.value)))}>
-                        {minutosComuns === undefined && <option value="">vários</option>}
-                        {[...new Set([45, 50, 60, 90, estado.calendario.minutosPorTempo])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n} min</option>)}
-                      </select>
-                    </label>
-                  )}
+                  {campoMinutos}
                   <select value={filtroTurma} onChange={(e) => setFiltroTurma(e.target.value)} aria-label="Filtrar por turma">
                     <option value="">Todas as turmas</option>
                     {turmas.map((t) => <option key={t} value={t}>{t}</option>)}

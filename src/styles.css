@@ -739,3 +739,5 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .gantt-mod .mod-dado { color: var(--muted); }
 .minutos-prof { flex-direction: row; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); }
 .minutos-prof select { width: auto; }
+.gc-minutos .minutos-prof { justify-content: space-between; width: 100%; font-size: 15px; color: var(--text); }
+.gc-minutos .minutos-prof select { min-height: 40px; font-size: 16px; }
