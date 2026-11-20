@@ -224,6 +224,8 @@ export interface Estado {
   atividades?: Atividade[];
   /** Nome do docente, para o cabeçalho e os PDF (opcional). */
   docente?: string;
+  /** Minutos que cada tempo conta no profissional, para todas as disciplinas (e as novas). */
+  minutosProfissional?: number;
   catalogo: EntradaCatalogo[];
 }
 
@@ -261,4 +263,22 @@ export function migrarDiasSemAula(e: Estado): Estado {
     ausencias: [...(e.ausencias ?? []), ...novas.filter((a) => !ids.has(a.id))],
     disciplinas: e.disciplinas.map((d) => (d.diasSemAula?.length ? { ...d, diasSemAula: [] } : d)),
   };
+}
+
+/**
+ * Muda de uma vez quantos minutos conta cada tempo em todas as disciplinas do
+ * profissional (e fica para as que se criarem depois).
+ */
+export function aplicarMinutosProfissional(e: Estado, minutos: number): Estado {
+  const proprio = minutos === e.calendario.minutosPorTempo ? undefined : minutos;
+  return {
+    ...e,
+    minutosProfissional: minutos,
+    disciplinas: e.disciplinas.map((d) => (ehGeral(d) ? d : { ...d, minutosPorTempo: proprio })),
+  };
+}
+
+/** Minutos por tempo para uma disciplina nova do profissional (sem valor: o do calendário). */
+export function minutosNovaDisciplina(e: Estado): number | undefined {
+  return e.minutosProfissional && e.minutosProfissional !== e.calendario.minutosPorTempo ? e.minutosProfissional : undefined;
 }

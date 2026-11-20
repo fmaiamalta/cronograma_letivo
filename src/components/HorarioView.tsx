@@ -4,7 +4,7 @@ import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodig
 import { limitesDisciplina, quantidade, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { atividadesDe, aulasDe, blocosDoEstado, fimDaAula, horasDosTempos, lerHoras, minutos, somarMinutos, temposDasAulas } from '../lib/horario';
-import { ANOS, COMPONENTES, ehGeral, minutosDe, type Atividade, type Aula, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
+import { ANOS, COMPONENTES, ehGeral, minutosDe, minutosNovaDisciplina, type Atividade, type Aula, ENSINOS, ensinoDe, type Ano, type Disciplina, type Ensino, type EntradaCatalogo, type Estado, type Modulo, type PeriodoTurma } from '../lib/types';
 import { DisciplinaPicker, type Escolha } from './DisciplinaPicker';
 import { ImportarHorario } from './ImportarHorario';
 import { IconDown, IconTrash, IconUp } from './icons';
@@ -34,6 +34,7 @@ export function HorarioView({ estado, planos, temposHorario, aberta, setAberta, 
       tempos: [0, 0, 0, 0, 0, 0, 0],
       diasSemAula: [],
       modulos: [],
+      minutosPorTempo: minutosNovaDisciplina(estado),
     };
     atualizar((e) => ({ ...e, disciplinas: [...e.disciplinas, d] }));
     setAberta(d.id);

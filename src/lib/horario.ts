@@ -1,7 +1,7 @@
 import { uid, weekday } from './dates';
 import { motivoSemAula } from './engine';
 import { CORES } from './presets';
-import { COMPONENTES, type Ano, type Atividade, type Ausencia, type Aula, type Bloco, type Disciplina, type Ensino, type Estado } from './types';
+import { COMPONENTES, ehGeral, minutosNovaDisciplina, type Ano, type Atividade, type Ausencia, type Aula, type Bloco, type Disciplina, type Ensino, type Estado } from './types';
 
 // Horário semanal: leitura do .ics (ex.: inforarios.pt) e ligação de cada
 // bloco à disciplina do cronograma, para os tempos por dia saírem daqui.
@@ -320,7 +320,9 @@ export function blocosDoEstado(e: Pick<Estado, 'horario' | 'disciplinas' | 'cale
  * início dos tempos ficam no calendário, se ainda lá não estiverem.
  */
 export function importarHorario(e: Estado, blocos: Bloco[], criar: { titulo: string; turmas: string[] }[] = []): Estado {
-  const novas = criar.map((a, i) => disciplinaDoHorario(a, e.disciplinas.length + i));
+  const novas = criar
+    .map((a, i) => disciplinaDoHorario(a, e.disciplinas.length + i))
+    .map((d) => (ehGeral(d) ? d : { ...d, minutosPorTempo: minutosNovaDisciplina(e) }));
   const disciplinas = [...e.disciplinas, ...novas];
   const dur = e.calendario.minutosPorTempo;
   const horas = e.calendario.horasTempos?.length ? e.calendario.horasTempos : horasDosBlocos(blocos);

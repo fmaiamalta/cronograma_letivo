@@ -223,3 +223,16 @@ describe('dado do total', () => {
     expect(dadoDoTotal(50, 188, disciplina({ ensino: 'secundario' }), cal)).toBe('50 de 188 tempos');
   });
 });
+
+describe('minutos por tempo para todo o profissional', () => {
+  it('muda todas as disciplinas do profissional e fica para as novas', async () => {
+    const { aplicarMinutosProfissional, minutosNovaDisciplina } = await import('../src/lib/types');
+    const cal = calendario2026();
+    const e0 = { ...estadoInicial(), calendario: cal, disciplinas: [disciplina({ id: 'p' }), disciplina({ id: 's', ensino: 'secundario' })] };
+    const e = aplicarMinutosProfissional(e0, 60);
+    expect(e.disciplinas.find((d) => d.id === 'p')!.minutosPorTempo).toBe(60);
+    expect(e.disciplinas.find((d) => d.id === 's')!.minutosPorTempo).toBeUndefined();
+    expect(minutosNovaDisciplina(e)).toBe(60);
+    expect(aplicarMinutosProfissional(e, 50).disciplinas[0].minutosPorTempo).toBeUndefined();
+  });
+});

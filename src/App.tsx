@@ -23,7 +23,7 @@ import { gistDoTexto, gravarSync, lerSync, obter, publicar, type ConfigSync } fr
 import { nuvemConfigurada } from './lib/nuvem';
 import { aplicarPacote, codificar, descodificar } from './lib/transfer';
 import { useNuvem } from './lib/useNuvem';
-import { ensinoDe, type CalendarioEscolar, type Modulo } from './lib/types';
+import { aplicarMinutosProfissional, ehGeral, ensinoDe, minutosDe, type CalendarioEscolar, type Modulo } from './lib/types';
 
 // 'semana' é a grelha do horário; 'horario' ficou com as disciplinas (o nome antigo do separador).
 type Separador = 'cronograma' | 'semana' | 'horario' | 'semaulas' | 'calendario' | 'catalogo' | 'tarefas';
@@ -119,6 +119,11 @@ export default function App() {
     .sort((a, b) => ORDEM_ENSINO[ensinoDe(a.p.disciplina)] - ORDEM_ENSINO[ensinoDe(b.p.disciplina)] || a.i - b.i)
     .map((x) => x.p);
   const visiveis = filtroTurma ? ordenados.filter((p) => p.disciplina.turma === filtroTurma) : ordenados;
+
+  // Minutos por tempo do profissional: um valor para todas (ou "vários", se diferem).
+  const profissionais = estado.disciplinas.filter((d) => !ehGeral(d));
+  const valoresMin = new Set(profissionais.map((d) => minutosDe(d, estado.calendario)));
+  const minutosComuns = valoresMin.size === 1 ? [...valoresMin][0] : undefined;
 
   const mudarModulo = (dId: string, mId: string, f: (m: Modulo) => Modulo) =>
     atualizar((e) => ({
@@ -368,6 +373,15 @@ export default function App() {
               </div>
               {planos.length > 0 && (
                 <div className="row wrap print-hide">
+                  {profissionais.length > 0 && (
+                    <label className="minutos-prof" title="Muda em todas as disciplinas do profissional; em cada disciplina pode escolher-se outro valor">
+                      Profissional: 1 tempo conta
+                      <select value={minutosComuns ?? ''} onChange={(e) => atualizar((x) => aplicarMinutosProfissional(x, Number(e.target.value)))}>
+                        {minutosComuns === undefined && <option value="">vários</option>}
+                        {[...new Set([45, 50, 60, 90, estado.calendario.minutosPorTempo])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n} min</option>)}
+                      </select>
+                    </label>
+                  )}
                   <select value={filtroTurma} onChange={(e) => setFiltroTurma(e.target.value)} aria-label="Filtrar por turma">
                     <option value="">Todas as turmas</option>
                     {turmas.map((t) => <option key={t} value={t}>{t}</option>)}
