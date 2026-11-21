@@ -741,3 +741,11 @@ section:first-of-type > .gc-ensino { border-top: 0; }
 .minutos-prof select { width: auto; }
 .gc-minutos .minutos-prof { justify-content: space-between; width: 100%; font-size: 15px; color: var(--text); }
 .gc-minutos .minutos-prof select { min-height: 40px; font-size: 16px; }
+td.acoes { white-space: nowrap; text-align: right; }
+td.acoes .icon-btn + .icon-btn, td.acoes .btn + .btn { margin-left: 4px; }
+tr.a-editar td { vertical-align: middle; }
+tr.a-editar td:nth-child(2) input { min-width: 280px; }
+tr.a-editar input, tr.a-editar select { width: 100%; min-width: 0; }
+tr.a-editar td:first-child input { min-width: 110px; }
+tr.a-editar td:nth-child(3) input { max-width: 70px; }
+.small-btn { padding: 6px 10px; font-size: 0.85rem; }

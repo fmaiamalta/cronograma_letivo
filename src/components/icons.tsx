@@ -30,3 +30,6 @@ export const IconList = () => (
 export const IconSemAula = () => (
   <svg {...base}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18M10 14l4 4M14 14l-4 4" /></svg>
 );
+export const IconEdit = () => (
+  <svg {...base}><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>
+);

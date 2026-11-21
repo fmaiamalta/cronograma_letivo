@@ -4,7 +4,7 @@ import { horasParaTempos } from '../lib/engine';
 import { lerFicheiro } from '../lib/fileText';
 import { CATALOGO_BASE } from '../lib/presets';
 import { COMPONENTES, type Componente, type EntradaCatalogo, type Estado } from '../lib/types';
-import { IconTrash } from './icons';
+import { IconEdit, IconTrash } from './icons';
 
 interface Props {
   estado: Estado;
@@ -17,7 +17,26 @@ export function CatalogoView({ estado, atualizar }: Props) {
   const [novas, setNovas] = useState<EntradaCatalogo[] | null>(null);
   const [form, setForm] = useState({ codigo: '', nome: '', horas: '25', componente: 'tecnologica' as Componente });
   const lista = pesquisarCatalogo(estado.catalogo, termo, 500);
-  const mpt = estado.calendario.minutosPorTempo;
+  // Tempos com os minutos do profissional (o campo do cronograma), se escolhidos.
+  const mpt = estado.minutosProfissional ?? estado.calendario.minutosPorTempo;
+  // Entrada a ser editada na tabela (pelo código original).
+  const [aEditar, setAEditar] = useState<{ original: string; codigo: string; nome: string; horas: string; componente: Componente } | null>(null);
+  const [erroEdicao, setErroEdicao] = useState('');
+
+  const gravarEdicao = () => {
+    if (!aEditar) return;
+    const horas = Number(aEditar.horas.replace(',', '.'));
+    // Módulos sem código (criados à mão) guardam o código interno.
+    const codigo = aEditar.codigo.trim() ? normalizarCodigo(aEditar.codigo) : aEditar.original;
+    if (!aEditar.nome.trim() || !(horas > 0)) { setErroEdicao('Nome e horas são obrigatórios.'); return; }
+    if (codigo !== aEditar.original && estado.catalogo.some((x) => x.codigo === codigo)) { setErroEdicao(`Já existe ${codigo} no catálogo.`); return; }
+    atualizar((s) => ({
+      ...s,
+      catalogo: s.catalogo.map((x) => (x.codigo === aEditar.original ? { ...x, codigo, nome: aEditar.nome.trim(), horas, componente: aEditar.componente } : x)),
+    }));
+    setAEditar(null);
+    setErroEdicao('');
+  };
 
   const importar = async (file: File) => {
     setALer('A ler o ficheiro...');
@@ -103,14 +122,32 @@ export function CatalogoView({ estado, atualizar }: Props) {
             <tr><th>Código</th><th>Nome</th><th>Horas</th><th>Tempos</th><th>Componente</th><th /></tr>
           </thead>
           <tbody>
-            {lista.map((e) => (
+            {lista.map((e) => aEditar?.original === e.codigo ? (
+              <tr key={e.codigo} className="a-editar">
+                <td><input className="mono" value={aEditar.codigo} placeholder="sem código" onChange={(x) => setAEditar({ ...aEditar, codigo: x.target.value })} aria-label="Código" /></td>
+                <td><input value={aEditar.nome} onChange={(x) => setAEditar({ ...aEditar, nome: x.target.value })} aria-label="Nome" autoFocus />{erroEdicao && <small className="warn">{erroEdicao}</small>}</td>
+                <td><input value={aEditar.horas} inputMode="decimal" onChange={(x) => setAEditar({ ...aEditar, horas: x.target.value })} aria-label="Horas" /></td>
+                <td>{Number(aEditar.horas.replace(',', '.')) > 0 ? horasParaTempos(Number(aEditar.horas.replace(',', '.')), mpt) : '—'}</td>
+                <td>
+                  <select value={aEditar.componente} onChange={(x) => setAEditar({ ...aEditar, componente: x.target.value as Componente })} aria-label="Componente">
+                    {COMPONENTES.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                </td>
+                <td className="acoes">
+                  <button className="btn primary small-btn" onClick={gravarEdicao}>Gravar</button>
+                  <button className="btn small-btn" onClick={() => { setAEditar(null); setErroEdicao(''); }}>Cancelar</button>
+                </td>
+              </tr>
+            ) : (
               <tr key={e.codigo}>
                 <td className="mono">{codigoVisivel(e)}</td>
                 <td>{e.nome}{e.opcional && <span className="tag">opcional</span>}</td>
                 <td>{e.horas}</td>
                 <td>{horasParaTempos(e.horas, mpt)}</td>
                 <td>{COMPONENTES.find((c) => c.id === e.componente)?.nome}</td>
-                <td>
+                <td className="acoes">
+                  <button className="icon-btn" aria-label={`Editar ${e.codigo}`}
+                    onClick={() => { setErroEdicao(''); setAEditar({ original: e.codigo, codigo: codigoVisivel(e), nome: e.nome, horas: String(e.horas).replace('.', ','), componente: e.componente }); }}><IconEdit /></button>
                   <button className="icon-btn" aria-label={`Apagar ${e.codigo}`}
                     onClick={() => atualizar((s) => ({ ...s, catalogo: s.catalogo.filter((x) => x.codigo !== e.codigo) }))}><IconTrash /></button>
                 </td>
