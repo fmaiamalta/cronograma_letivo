@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DIAS_SEMANA, fmtLong, uid } from '../lib/dates';
-import { codigoVisivel, ehUC, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarCatalogo, procurarCodigo } from '../lib/catalog';
+import { codigoVisivel, diferencasDoCatalogo, entradaDoModulo, entradaParaModulo, juntarCatalogo, normalizarCodigo, pesquisarModulos, procurarCodigo } from '../lib/catalog';
 import { limitesDisciplina, quantidade, temposDoModulo, type PlanoDisciplina } from '../lib/engine';
 import { CORES } from '../lib/presets';
 import { atividadesDe, aulasDe, blocosDoEstado, fimDaAula, horasDosTempos, lerHoras, minutos, somarMinutos, temposDasAulas } from '../lib/horario';
@@ -185,8 +185,13 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
    * escolher noutra disciplina. Uma entrada com código substitui a que o mesmo
    * módulo tinha sem código.
    */
-  const registar = (m: Pick<Modulo, 'codigo' | 'nome' | 'quantidade' | 'unidade'>) =>
+  const registar = (m: Pick<Modulo, 'id' | 'codigo' | 'nome' | 'quantidade' | 'unidade'>) =>
     atualizar((e) => {
+      // Uma UC com código que já está noutras disciplinas não muda sozinha no catálogo:
+      // aparece "Diferente do catálogo" e decide-se ali.
+      const codigo = m.codigo?.trim() ? normalizarCodigo(m.codigo) : undefined;
+      const usadoNoutras = codigo && e.disciplinas.some((x) => x.modulos.some((y) => y.id !== m.id && y.codigo === codigo));
+      if (usadoNoutras && e.catalogo.some((c) => c.codigo === codigo)) return e;
       const nova = entradaParaModulo(e.catalogo, m, d.componente, minutosDe(d, e.calendario));
       if (!nova) return e;
       const resto = nova.modulo ? e.catalogo : e.catalogo.filter((c) => !(c.modulo && c.nome.trim() === nova.nome));
@@ -242,7 +247,8 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
       ],
     }));
 
-  const resultados = procura.trim() ? pesquisarCatalogo(estado.catalogo.filter(ehUC), procura, 8) : [];
+  // Tudo o que está no catálogo (UC, BASE, OPCIONAL, ...), com as UC primeiro.
+  const resultados = procura.trim() ? pesquisarModulos(estado.catalogo, procura, 12) : [];
 
   return (
     <div className="card-body">
@@ -379,6 +385,22 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
                   <button className="icon-btn" onClick={() => moverModulo(i, 1)} disabled={i === d.modulos.length - 1} aria-label="Descer"><IconDown /></button>
                   <button className="icon-btn" onClick={() => mudar((x) => ({ ...x, modulos: x.modulos.filter((y) => y.id !== m.id) }))} aria-label="Apagar módulo"><IconTrash /></button>
                 </div>
+                {(() => {
+                  // Diferente do catálogo: passar a alteração para o catálogo, ou repor o que lá está.
+                  const ent = entradaDoModulo(estado.catalogo, m);
+                  const dif = ent && diferencasDoCatalogo(ent, m);
+                  if (!ent || !dif) return null;
+                  return (
+                    <div className="mod-aviso">
+                      <span><strong>Diferente do catálogo</strong> (catálogo: {[dif.nome && `"${ent.nome}"`, dif.horas && `${ent.horas} h`].filter(Boolean).join(', ')})</span>
+                      <button className="link-btn small" onClick={() => atualizar((e) => ({
+                        ...e,
+                        catalogo: e.catalogo.map((c) => (c.codigo === ent.codigo ? { ...c, nome: m.nome.trim() || c.nome, horas: m.unidade === 'h' ? m.quantidade : c.horas } : c)),
+                      }))}>Passar para o catálogo</button>
+                      <button className="link-btn small" onClick={() => mudarModulo(m.id, (x) => ({ ...x, nome: ent.nome, quantidade: ent.horas, unidade: 'h' }))}>Repor do catálogo</button>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
@@ -399,7 +421,7 @@ function EditorDisciplina({ d, doHorario, estado, plano, mudar, apagar, atualiza
                 {resultados.map((r) => (
                   <li key={r.codigo}>
                     <button onClick={() => { addModulo(r); setProcura(''); }}>
-                      {codigoVisivel(r) && <strong>{codigoVisivel(r)} </strong>}{r.nome} <small>{r.horas} h{r.opcional ? ' · opcional' : ''}</small>
+                      {codigoVisivel(r) && <strong>{codigoVisivel(r)} </strong>}{r.nome} <small>{r.horas} h · {COMPONENTES.find((c) => c.id === r.componente)?.nome}{r.opcional ? ' · opcional' : ''}</small>
                     </button>
                   </li>
                 ))}

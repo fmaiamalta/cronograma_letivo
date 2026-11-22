@@ -85,3 +85,22 @@ describe('módulos escritos à mão entram no catálogo', () => {
     expect(entradaParaModulo(base, { nome: 'Algo', quantidade: 0, unidade: 'h' }, 'tecnologica', 50)).toBeNull();
   });
 });
+
+describe('módulos e catálogo', () => {
+  it('a procura de módulos mostra também BASE e OPCIONAL, com as UC primeiro', async () => {
+    const { pesquisarModulos } = await import('../src/lib/catalog');
+    const cat = [
+      { codigo: 'OPCIONAL3', nome: 'Criação de páginas web', horas: 25, componente: 'tecnologica' as const },
+      { codigo: 'UC02634', nome: 'Criar páginas para a web em hipertexto', horas: 25, componente: 'tecnologica' as const },
+      { codigo: 'BASE1', nome: 'Criar documentos', horas: 50, componente: 'sociocultural' as const },
+    ];
+    expect(pesquisarModulos(cat, 'cria').map((e) => e.codigo)).toEqual(['UC02634', 'OPCIONAL3', 'BASE1']);
+  });
+  it('diz o que é diferente do catálogo', async () => {
+    const { diferencasDoCatalogo } = await import('../src/lib/catalog');
+    const e = { codigo: 'UC02634', nome: 'Criar páginas', horas: 25, componente: 'tecnologica' as const };
+    expect(diferencasDoCatalogo(e, { nome: 'Criar páginas', quantidade: 25, unidade: 'h' })).toBeNull();
+    expect(diferencasDoCatalogo(e, { nome: 'Criar páginas', quantidade: 20, unidade: 'h' })).toEqual({ nome: false, horas: true });
+    expect(diferencasDoCatalogo(e, { nome: 'Páginas web', quantidade: 25, unidade: 'h' })).toEqual({ nome: true, horas: false });
+  });
+});

@@ -79,7 +79,7 @@ export function exemplo(): Pick<Estado, 'disciplinas' | 'periodosTurma'> {
     {
       id: uid(), turma: '10.º M', nome: 'Sistemas de Informação', ano: 10, componente: 'tecnologica', cor: CORES[6],
       tempos: semana(1, 0, 0, 1, 0), diasSemAula: [],
-      modulos: [mod('Criar páginas para a web em hipertexto', 25, 'h', 'UC02634'), mod('Construir estilos em CSS', 25, 'h', 'UC02651')],
+      modulos: [mod('Criar páginas para a web em hipertexto', 25, 'h', 'UC02634'), mod('Construir estilos em CSS (Cascadin Style Sheets)', 25, 'h', 'UC02651')],
     },
     {
       id: uid(), turma: '11.º A', nome: 'Matemática A', ano: 11, ensino: 'secundario', componente: 'especifica', cor: CORES[4],

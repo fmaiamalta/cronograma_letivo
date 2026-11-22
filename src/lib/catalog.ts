@@ -1,4 +1,4 @@
-import type { Componente, EntradaCatalogo } from './types';
+import type { Componente, EntradaCatalogo, Modulo } from './types';
 
 /** 1 ponto de crédito = 100/9 h (2,25 pontos = 25 h; 4,5 pontos = 50 h). */
 export function pontosParaHoras(pontos: number): number {
@@ -175,4 +175,25 @@ export function lerReferencial(texto: string): EntradaCatalogo[] {
     });
   }
   return [...out.values()];
+}
+
+/**
+ * Procura para juntar módulos a uma disciplina: tudo o que está no catálogo
+ * (UC, BASE, OPCIONAL, ...), com as UC primeiro.
+ */
+export function pesquisarModulos(catalogo: EntradaCatalogo[], termo: string, max = 12): EntradaCatalogo[] {
+  const todos = pesquisarCatalogo(catalogo, termo, 1000);
+  return [...todos.filter(ehUC), ...todos.filter((e) => !ehUC(e))].slice(0, max);
+}
+
+/** Entrada do catálogo de onde veio um módulo (pelo código), se houver. */
+export function entradaDoModulo(catalogo: EntradaCatalogo[], m: Pick<Modulo, 'codigo'>): EntradaCatalogo | undefined {
+  return m.codigo ? catalogo.find((e) => e.codigo === m.codigo) : undefined;
+}
+
+/** O módulo difere da entrada do catálogo (nome ou horas)? Devolve o que difere. */
+export function diferencasDoCatalogo(e: EntradaCatalogo, m: Pick<Modulo, 'nome' | 'quantidade' | 'unidade'>): { nome: boolean; horas: boolean } | null {
+  const nome = e.nome.trim() !== m.nome.trim();
+  const horas = m.unidade === 'h' && Math.abs(e.horas - m.quantidade) > 0.01;
+  return nome || horas ? { nome, horas } : null;
 }
