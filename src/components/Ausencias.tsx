@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { addDays, fmtLong, todayISO, uid, weekday } from '../lib/dates';
 import { limitesDisciplina, motivoSemAula } from '../lib/engine';
-import { temposDaDisciplina } from '../lib/horario';
-import { MOTIVOS_AUSENCIA, type Ausencia, type Estado } from '../lib/types';
+import { aulasDe, temposDaDisciplina } from '../lib/horario';
+import { MOTIVOS_AUSENCIA, type Ausencia, type Disciplina, type Estado } from '../lib/types';
 import { IconTrash } from './icons';
 
 interface Props {
@@ -59,8 +59,22 @@ export function Ausencias({ estado, atualizar }: Props) {
   const [tempos, setTempos] = useState(0); // 0 = todos os desse dia
   const [conta, setConta] = useState(false);
 
-  const d = estado.disciplinas.find((x) => x.id === dId);
+  // Uma disciplina: só as que têm aula no dia escolhido (horário, datas da disciplina, sem feriado nem interrupção).
+  const disponiveis = inicio
+    ? estado.disciplinas.filter((x) => {
+        const t = temposDaDisciplina(x, estado)[weekday(inicio)] ?? 0;
+        const { inicio: ini, fim } = limitesDisciplina(x, estado.calendario);
+        return t > 0 && inicio >= ini && inicio <= fim && !motivoSemAula(inicio, estado.calendario, x.turma, estado.periodosTurma, x.diasSemAula);
+      })
+    : [];
+  const d = disponiveis.find((x) => x.id === dId) ?? disponiveis[0];
   const nesseDia = d && inicio ? temposDaDisciplina(d, estado)[weekday(inicio)] ?? 0 : 0;
+  /** "10M | SI · 14h30 · 2 tempos" */
+  const rotulo = (x: Disciplina) => {
+    const aulas = aulasDe(x, estado).filter((a) => a.dia === weekday(inicio));
+    const n = temposDaDisciplina(x, estado)[weekday(inicio)];
+    return `${x.turma} | ${x.nome || 'Sem nome'}${aulas.length ? ` · ${aulas.map((a) => a.inicio.replace(':', 'h')).join(', ')}` : ''} · ${n} ${n === 1 ? 'tempo' : 'tempos'}`;
+  };
 
   const adicionar = () => {
     if (!inicio || (uma && !d)) return;
@@ -92,12 +106,12 @@ export function Ausencias({ estado, atualizar }: Props) {
         </div>
         <div className="row wrap ausencias-form">
           <EscolherMotivo motivo={motivo} outro={outro} onMotivo={setMotivo} onOutro={setOutro} />
-          {uma && (
-            <select value={dId} onChange={(e) => { setDId(e.target.value); setTempos(0); }} aria-label="Disciplina">
-              {estado.disciplinas.map((x) => <option key={x.id} value={x.id}>{x.turma} | {x.nome || 'Sem nome'}</option>)}
+          <input type="date" value={inicio} onChange={(e) => { setInicio(e.target.value); setTempos(0); }} aria-label={uma ? 'Dia' : 'Primeiro dia'} />
+          {uma && disponiveis.length > 0 && (
+            <select value={d?.id ?? ''} onChange={(e) => { setDId(e.target.value); setTempos(0); }} aria-label="Disciplina">
+              {disponiveis.map((x) => <option key={x.id} value={x.id}>{rotulo(x)}</option>)}
             </select>
           )}
-          <input type="date" value={inicio} onChange={(e) => { setInicio(e.target.value); setTempos(0); }} aria-label={uma ? 'Dia' : 'Primeiro dia'} />
           {!uma && <input type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} aria-label="Último dia (opcional)" />}
           {uma && nesseDia > 1 && (
             <select value={tempos} onChange={(e) => setTempos(Number(e.target.value))} aria-label="Tempos">
@@ -111,7 +125,7 @@ export function Ausencias({ estado, atualizar }: Props) {
           <input type="checkbox" checked={conta} onChange={(e) => setConta(e.target.checked)} />
           Conta como aula (sumário numerado): o cronograma não avança
         </label>
-        {uma && d && inicio && nesseDia === 0 && <p className="small warn">Sem aulas desta disciplina neste dia da semana.</p>}
+        {uma && inicio && !disponiveis.length && <p className="small warn">Sem aulas neste dia.</p>}
       </section>
 
       {lista.length > 0 && (
