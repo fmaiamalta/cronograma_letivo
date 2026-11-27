@@ -751,3 +751,4 @@ tr.a-editar td:nth-child(3) input { max-width: 70px; }
 .small-btn { padding: 6px 10px; font-size: 0.85rem; }
 .mod-aviso { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 0.82rem; color: var(--warn); padding: 6px 8px; border-radius: 6px; background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .mod-aviso .link-btn { padding: 2px 0; }
+.pdf-pronto { margin: 8px 0; font-size: 1rem; }

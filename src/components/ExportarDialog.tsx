@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addDays, weekday } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
-import { entregar, pdfCronograma, pdfHorario } from '../lib/exportarPdf';
+import { entregar, guardarPdf, pdfCronograma, pdfHorario, type PdfPronto } from '../lib/exportarPdf';
 import type { Estado, ISODate } from '../lib/types';
 
 interface Props {
@@ -36,6 +36,9 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
   const [segunda, setSegunda] = useState(() => segundaDe(hoje));
   const [aFazer, setAFazer] = useState(false);
   const [erro, setErro] = useState('');
+  // PDF criado no computador: Abrir ou Guardar.
+  const [pronto, setPronto] = useState<PdfPronto | null>(null);
+  useEffect(() => () => { if (pronto) setTimeout(() => URL.revokeObjectURL(pronto.url), 60_000); }, [pronto]);
   const [comDocente, setComDocente] = useState(!!estado.docente);
   const docente = comDocente ? estado.docente : undefined;
 
@@ -58,10 +61,12 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
           : lista.map((p) => `${p.disciplina.turma} | ${p.disciplina.nome}`).join(', ');
         const doc = await pdfCronograma(estado, lista, hoje, subtitulo, docente);
         const nome = lista.length === 1 ? `${lista[0].disciplina.turma} ${lista[0].disciplina.nome}` : turmas.length === 1 ? turmas[0] : 'todas';
-        await entregar(doc, `Cronograma ${nome}.pdf`.replace(/[\\/:*?"<>|]/g, '-'));
+        const r = await entregar(doc, `Cronograma ${nome}.pdf`.replace(/[\\/:*?"<>|]/g, '-'));
+        if (r) { setPronto(r); return; }
       } else {
         const doc = await pdfHorario(estado, planos, segunda, semanaTexto(segunda), docente);
-        await entregar(doc, `Horário ${segunda.split('-').reverse().join('-')}.pdf`);
+        const r = await entregar(doc, `Horário ${segunda.split('-').reverse().join('-')}.pdf`);
+        if (r) { setPronto(r); return; }
       }
       onFechar();
     } catch (e) {
@@ -75,6 +80,17 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
     <div className="sheet-backdrop center" onClick={onFechar}>
       <div className="dialog exportar" role="dialog" aria-modal="true" aria-label="Exportar PDF" onClick={(e) => e.stopPropagation()}>
         <h2>Exportar PDF</h2>
+        {pronto ? (
+          <>
+            <p className="pdf-pronto"><strong>PDF pronto</strong><br /><span className="muted">{pronto.nome}</span></p>
+            <p className="small muted">Abrir: num separador novo, para ver, imprimir ou guardar.</p>
+            <div className="row wrap end">
+              <button className="btn" onClick={onFechar}>Fechar</button>
+              <button className="btn" onClick={() => guardarPdf(pronto)}>Guardar</button>
+              <button className="btn primary" onClick={() => window.open(pronto.url, '_blank')}>Abrir</button>
+            </div>
+          </>
+        ) : <>
         <div className="seg" role="radiogroup" aria-label="O quê">
           <button type="button" role="radio" aria-checked={tipo === 'cronograma'} className={tipo === 'cronograma' ? 'on' : ''} onClick={() => setTipo('cronograma')}>Cronograma</button>
           <button type="button" role="radio" aria-checked={tipo === 'horario'} className={tipo === 'horario' ? 'on' : ''} onClick={() => setTipo('horario')}>Horário</button>
@@ -119,6 +135,7 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
             {aFazer ? 'A criar...' : 'Exportar PDF'}
           </button>
         </div>
+        </>}
       </div>
     </div>
   );

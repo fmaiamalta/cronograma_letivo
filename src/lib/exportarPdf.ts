@@ -56,8 +56,19 @@ function rodape(doc: jsPDF) {
   }
 }
 
-/** Entrega o PDF: no telemóvel abre a folha de partilha (guardar, enviar); no computador descarrega. */
-export async function entregar(doc: jsPDF, nome: string) {
+/** PDF criado e ainda não guardado: o endereço (blob) e o nome do ficheiro. */
+export interface PdfPronto {
+  url: string;
+  nome: string;
+}
+
+/**
+ * Entrega o PDF. No telemóvel abre a folha de partilha (guardar, imprimir,
+ * enviar) e devolve null. No computador devolve o PDF pronto, para abrir num
+ * separador ou guardar com um toque (descarregar sozinho, sem o abrir, deixava
+ * o ficheiro só nas transferências).
+ */
+export async function entregar(doc: jsPDF, nome: string): Promise<PdfPronto | null> {
   // Sem acentos nem símbolos no nome: alguns browsers trocam-no por "download".
   nome = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/º/g, '').replace(/[^\w .-]+/g, '-').replace(/\s+/g, ' ').trim();
   const blob = doc.output('blob');
@@ -66,19 +77,22 @@ export async function entregar(doc: jsPDF, nome: string) {
   if (toque && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: nome });
-      return;
+      return null;
     } catch (e) {
-      if ((e as Error).name === 'AbortError') return;
+      if ((e as Error).name === 'AbortError') return null;
     }
   }
-  const url = URL.createObjectURL(blob);
+  return { url: URL.createObjectURL(file), nome };
+}
+
+/** Guarda o PDF pronto (descarrega com o nome certo). */
+export function guardarPdf(p: PdfPronto) {
   const a = document.createElement('a');
-  a.href = url;
-  a.download = nome;
+  a.href = p.url;
+  a.download = p.nome;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 /** Cronograma das disciplinas escolhidas, com interrupções, feriados, dias sem aulas e o dia de hoje. */
