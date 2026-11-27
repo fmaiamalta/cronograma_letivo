@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { addDays, weekday } from '../lib/dates';
 import type { PlanoDisciplina } from '../lib/engine';
+import { VisorPdf } from './VisorPdf';
 import { entregar, guardarPdf, pdfCronograma, pdfHorario, type PdfPronto } from '../lib/exportarPdf';
 import type { Estado, ISODate } from '../lib/types';
 
@@ -38,6 +39,8 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
   const [erro, setErro] = useState('');
   // PDF criado no computador: Abrir ou Guardar.
   const [pronto, setPronto] = useState<PdfPronto | null>(null);
+  // Visor dentro da app: na app instalada, abrir noutro separador não funciona.
+  const [ver, setVer] = useState(false);
   useEffect(() => () => { if (pronto) setTimeout(() => URL.revokeObjectURL(pronto.url), 60_000); }, [pronto]);
   const [comDocente, setComDocente] = useState(!!estado.docente);
   const docente = comDocente ? estado.docente : undefined;
@@ -76,6 +79,8 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
     }
   };
 
+  if (pronto && ver) return <VisorPdf pdf={pronto} onFechar={onFechar} />;
+
   return (
     <div className="sheet-backdrop center" onClick={onFechar}>
       <div className="dialog exportar" role="dialog" aria-modal="true" aria-label="Exportar PDF" onClick={(e) => e.stopPropagation()}>
@@ -83,11 +88,11 @@ export function ExportarDialog({ estado, planos, hoje, turma, tipo: tipoInicial,
         {pronto ? (
           <>
             <p className="pdf-pronto"><strong>PDF pronto</strong><br /><span className="muted">{pronto.nome}</span></p>
-            <p className="small muted">Abrir: num separador novo, para ver, imprimir ou guardar.</p>
+            <p className="small muted">Abrir: mostra o PDF aqui, para ver, imprimir ou guardar.</p>
             <div className="row wrap end">
               <button className="btn" onClick={onFechar}>Fechar</button>
               <button className="btn" onClick={() => guardarPdf(pronto)}>Guardar</button>
-              <button className="btn primary" onClick={() => window.open(pronto.url, '_blank')}>Abrir</button>
+              <button className="btn primary" onClick={() => setVer(true)}>Abrir</button>
             </div>
           </>
         ) : <>
